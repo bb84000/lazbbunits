@@ -1,0 +1,94 @@
+unit lazbbChkNewVer;
+
+{$mode objfpc}{$H+}
+
+interface
+
+uses
+  Classes, SysUtils, dialogs, fphttpclient, fpopenssl, openssl, forms, extctrls;
+
+function VersionToInt (VerStr: String): int64;
+function GetLastVersion (url, prog: string; app: TApplication): string ;
+
+implementation
+
+var
+  Timer1: TTimer;
+
+function  VersionToInt (VerStr: String): int64;
+var
+  A: TStringArray;
+begin
+  Result:= $fffffffffffff;
+  if length(VerStr) > 0 then
+  begin
+    A:= VerStr.Split('.');
+    try
+      Result:= (65536*StrToInt(A[0]))+StrToInt(A[1]);
+      Result:= (65536*Result)+StrToInt(A[2]);
+      Result:= (65536*Result)+StrToInt(A[3]);
+    except
+      Result:= $fffffffffffff;
+    end;
+  end;
+end;
+
+procedure OnTimer;
+begin
+  ShowMessage('Test');
+  Timer1.Enabled:= false;
+
+end;
+
+function GetLastVersion (url, prog: string; app: TApplication): string;
+var
+  MyHTTPCli: TFPHTTPClient;
+  ProgList: TStringList;
+  i, p: integer;
+  s: string;
+  ANotifyEvent : TNotifyEvent;
+begin
+  result:='';
+  ProgList:= TStringList.Create;
+  Timer1:= TTimer.Create(nil);
+  Timer1.Enabled:= true;
+  Timer1.Interval:= 1000;
+  // TMethod is a record which have fields named Code and Data.
+  TMethod(ANotifyEvent).Code := @OnTimer; // Address of the routine
+  TMethod(ANotifyEvent).Data := Pointer(Timer1); // Value of this field will be passed as an hidden Self parameter to method subroutine.
+  Timer1.OnTimer := ANotifyEvent;
+
+ { SSL initialization has to be done by hand here }
+  InitSSLInterface;
+  MyHTTPCli:= TFPHTTPClient.Create(nil);
+  try
+    ProgList.Text:=MyHTTPCli.get(url);
+    app.processmessages ;
+    if Length(ProgList.Text) > 0 then
+    begin
+      For i:= 0 to ProgList.Count-1 do
+      begin
+        p:= Pos(';', ProgList.Strings[i]);
+        s:= Copy (ProgList.Strings[i], 1, p-1);
+        if CompareText (prog, s) = 0 then
+        begin
+          s:= Copy (ProgList.Strings[i], p+1, 20);
+          p:= Pos(';', s);
+          result:= Copy (s, 1, p-1);
+          //SendMessage(hnd, WM_INFO_UPDATE, WP_NewVersion, DWORD(PChar(s)));
+          break;
+        end;
+      end;
+    end;
+  except
+    ShowMessage('Erreur');
+
+  end;
+
+
+  ProgList.Free;
+  MyHTTPCli.Free;
+end;
+
+end.
+

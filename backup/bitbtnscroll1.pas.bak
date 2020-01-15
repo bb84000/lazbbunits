@@ -1,0 +1,214 @@
+unit BitBtnScroll1;
+
+{$mode objfpc}{$H+}
+
+interface
+
+uses
+  Classes, SysUtils, LResources, Forms, Controls, Graphics, Dialogs, Buttons,  ExtCtrls;
+
+type
+  TScrollType = (scEnabled, scDisabled, scAuto);
+
+  TBitBtnScroll = class(TBitBtn)
+  private
+    { Déclarations privées }
+    FCaption: String;
+    FScrollInterval:integer;
+    FScrollAutoString:string;
+    FScroll: TScrollType;
+    FScrollGraph: Boolean;
+    CaptionCanvas: TCanvas;
+    CaptionBmp: Tbitmap;
+    CaptionRect: TRect;
+    ScrollTimer: TTimer;
+    Initialized: Boolean;
+    ScrollText: String;
+    txtHeight, txtWidth: Integer;
+    ScrollBmp: TBitMap;
+    ScrollRect:Trect;
+    BkGndBmp:Tbitmap;
+    BkGndRect: Trect;
+    ScrollIndex: Integer;
+
+    procedure OnTimer(Sender: TObject); virtual;
+   // procedure CNDrawItem(var Message: TWMDrawItem); message CN_DRAWITEM;
+   // procedure CMMouseEnter(var Message: TMessage); message CM_MOUSEENTER;
+   // procedure CMMouseLeave(var Message: TMessage); message CM_MOUSELEAVE;
+
+    procedure SetCaption(ACaption: string);
+    procedure SetSCrollInterval(AScrollInterval:integer);
+    procedure SetSCroll(Ascroll:TScrollType);
+    procedure SetSCrollAutoString(AScrollAutoString:string);
+   // procedure SetSCrollGraph(AscrollGraph:Boolean);
+    procedure Initialize;
+  protected
+    { Déclarations protégées }
+  public
+    { Déclarations publiques }
+    constructor Create(AOwner: TComponent); override;
+    //destructor Destroy; override;
+
+  published
+    { Déclarations publiées }
+    property Caption: string read FCaption write SetCaption;
+    property ScrollInterval:integer read  FScrollInterval write SetSCrollInterval;
+    property Scroll:TScrollType read FSCroll write SetSCroll;
+    property ScrollAutoString:string read FScrollAutoString write SetScrollAutoString ;
+   // property ScrollGraph: Boolean read FScrollGraph write SetScrollGraph;
+  end;
+
+procedure Register;
+
+implementation
+
+constructor TBitBtnScroll.Create(AOwner: TComponent);
+begin
+  inherited;
+  //ControlStyle := Controlstyle + [csAcceptsControls] ;
+  FScroll:=scAuto;
+  AutoSize:= False;
+  Margin:= 4;
+  FScrollInterval:=50;
+  FScrollGraph:= False;
+  FCaption:='BtnScroll';
+  FScrollAutoString:= '...';
+  ScrollTimer:= TTimer.Create(self);
+  ScrollTimer.Interval:= FScrollInterval;
+  ScrollTimer.Enabled:= False;
+  ScrollTimer.OnTimer:= @OnTimer;
+  Initialized:= False;
+  ScrollIndex:= 0;
+  inherited Layout:= Layout;
+  inherited Caption:= FCaption;
+  if csDesigning in ComponentState then Exit;
+  inherited Caption:= '';
+  CaptionCanvas:= TCanvas.Create;
+  ScrollText:= '';
+  ScrollBmp:= Tbitmap.Create;
+  ScrollBmp.PixelFormat:= pf8bit;
+  BkGndBmp:= Tbitmap.Create;
+  BkGndBmp.PixelFormat:= pf8bit;
+  CaptionBmp:= Tbitmap.Create;
+end;
+
+procedure TBitBtnScroll.SetCaption(ACaption: string);
+begin
+  if fCaption=ACaption then exit;
+  FCaption:=ACaption;
+  if csDesigning in ComponentState then inherited Caption:=FCaption;
+  if Initialized then Initialize;
+end;
+
+procedure TBitBtnScroll.SetScrollInterval(AScrollInterval:integer);
+begin
+ FScrollInterval:=AScrollInterval;
+ ScrollTimer.Interval:= FScrollInterval;
+ if Initialized then Initialize;
+end;
+
+procedure TBitBtnScroll.SetSCroll(Ascroll:TScrollType);
+begin
+  if fScroll= Ascroll then exit;
+  fsCroll:= AScroll;
+  if Initialized then Initialize;
+end;
+
+procedure TBitBtnScroll.SetSCrollAutoString(AScrollAutoString:string);
+begin
+  if FSCrollAutoString= AScrollAutoString then exit;
+  FSCrollAutoString:= AScrollAutoString;
+  if Initialized then Initialize;
+end;
+
+procedure TBitBtnScroll.Initialize;
+begin
+
+  ScrollTimer.Enabled:= False;
+  // Scroll désactivé
+  if FScroll = scDisabled then exit;
+  //CaptionCanvas.handle:= GetDC(Handle);
+  CaptionCanvas.Font.Assign(Font);
+  // Texte moins long que le bouton et scAuto
+  if CaptionCanvas.TextWidth(FCaption) <= Width-(Glyph.Width div NumGlyphs)-2*(Margin+spacing) then
+  begin
+    if FScroll = scAuto then exit;
+  end;
+  // Alors on défile !
+  ScrollText:= FCaption+FScrollAutoString;
+  TxtHeight:= CaptionCanvas.TextHeight(ScrollText);
+  TxtWidth:= CaptionCanvas.TextWidth(ScrollText);
+  CaptionRect.Top:= (height-TxtHeight) div 2;
+  CaptionRect.Bottom:= CaptionRect.Top+TxtHeight;
+  BkGndBmp.Width:= 1;
+  BkGndBmp.Height:= TxtHeight;
+  BkGndRect:= Rect(0, 0, 1, TxtHeight);
+  if Glyph.width=0 then
+  begin
+    CaptionRect.Left:= margin+1;
+    CaptionRect.Right:= CaptionRect.Left+ClientWidth-margin*3;
+    BkGndBmp.Canvas.CopyRect(BkGndRect, CaptionCanvas,
+                              Rect(CaptionRect.Left-1, CaptionRect.top, CaptionRect.Left, CaptionRect.Bottom));
+  end else
+
+  Case Layout of
+    blGlyphLeft: begin
+                   CaptionRect.Left:= margin+spacing+(glyph.width div NumGlyphs)+margin;
+                   CaptionRect.Right:= ClientWidth+1-margin*2;
+                   BkGndBmp.Canvas.CopyRect(BkGndRect, CaptionCanvas,
+                              Rect(CaptionRect.Left-1, CaptionRect.top, CaptionRect.Left, CaptionRect.Bottom));
+                 end;
+    blGlyphRight:begin
+                   CaptionRect.Left:= margin+1;
+                   CaptionRect.Right:= ClientWidth-spacing-margin*2-(glyph.width div NumGlyphs);
+                   BkGndBmp.Canvas.CopyRect(BkGndRect, CaptionCanvas,
+                              Rect(CaptionRect.Right, CaptionRect.top, CaptionRect.Right+1, CaptionRect.Bottom));
+                 end;
+  end;
+  If fScrollGraph then
+  begin
+    ScrollBmp.Canvas.Font.Assign(Font);
+    ScrollBmp.width:=  2*txtWidth;
+    ScrollBmp.Height:= txtHeight;
+    ScrollRect:= Rect(0,0,2*txtWidth,txtHeight);
+    ScrollBmp.Canvas.StretchDraw(ScrollRect, BkGndBmp);
+    ScrollBmp.Canvas.Brush.Style:= bsClear;
+    ScrollBmp.Canvas.TextOut(0,0, ScrollText+ScrollText);
+  end;
+
+  SCrollTimer.Enabled:= True;
+end;
+
+procedure TBitBtnScroll.OnTimer(Sender: TObject);
+var
+  i: Integer;
+  s: String;
+
+begin
+ // If not IsWindowVisible(TForm(Owner).Handle) then exit;
+  if not fSCrollGraph then
+  begin
+    ScrollText:= Copy(ScrollText, 2, Length(ScrollText) - 1) + Copy(ScrollText,1,1) ;
+    s:= ScrollText;
+    for i:= 0 to length(ScrollText)-1 do
+      if CaptionCanvas.TextWidth(s) > CaptionRect.Right- CaptionRect.Left
+      then s:= copy (s, 1, length(s)-1) else break ;
+    inherited Caption:= s;
+  end else
+  begin
+    //if ScrollIndex=0 then Initialize;
+    if ScrollIndex < (ScrollBmp.Width div 2)-1 then Inc(ScrollIndex, 1) else
+    begin
+      ScrollIndex:= 0;
+    end;
+    CaptionCanvas.CopyRect(CaptionRect, ScrollBmp.Canvas, Rect(ScrollIndex,0,ScrollIndex+CaptionRect.Right-CaptionRect.left , txtHeight));
+  end;
+end;
+
+procedure Register;
+begin
+  {$I bitbtnscroll1_icon.lrs}
+  RegisterComponents('lazbbComponents',[TBitBtnScroll]);
+end;
+
+end.

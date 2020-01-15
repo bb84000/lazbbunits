@@ -1,0 +1,255 @@
+unit lazbbscrollbutton;
+
+{$mode objfpc}{$H+}
+
+interface
+
+uses
+  Classes, SysUtils, ExtCtrls, LResources, Forms, Controls, Graphics, Dialogs, Buttons;
+
+type
+    TScrollLabel = class(TCustomLabel)
+  private
+
+  protected
+
+  public
+
+  published
+    end;
+
+  TScrollButton = class(TSpeedButton)
+  private
+    FOffset: integer;
+    FScrollInterval: integer;
+    FScrollCaption:string;
+    FScrolling: Boolean;
+    FStep: integer;
+    FTimerScroll: TTimer;
+    FTimer: TTimer;
+    first: boolean;
+    MaxTxtWidth: Integer;
+    TxtWidth: Integer;
+    BegTxt: integer;
+    spacewidth: Integer;
+    PrevGlyphWidth: Integer;
+    PrevWidth: Integer;
+    R : TRect;
+    TextLeft, TextTop: integer;
+    txtStyle : TTextStyle;
+    procedure OnTimer(Sender: TObject);
+    procedure OnTimerScroll(Sender: TObject);
+    procedure SetScrolling(AValue: Boolean);
+    procedure SetScrollRefresh(aValue: integer);
+    procedure SetScrollCaption(aValue: string);
+  protected
+    property Caption;
+  public
+    offset: integer;
+    txtlength: integer;
+    constructor Create(anOwner: TComponent);  override;
+    procedure Paint; override;
+  published
+    property ScrollInterval: integer read FScrollInterval write SetScrollRefresh default 100;
+    property Scrolling: boolean read FScrolling write SetScrolling default false;
+    property ScrollCaption: string read FScrollCaption write SetSCrollCaption;
+  end;
+
+
+
+
+
+procedure Register;
+
+implementation
+
+procedure Register;
+begin
+  {$I lazbbscrollbutton_icon.lrs}
+   RegisterComponents('lazbbComponents',[TScrollButton]);
+  {$I lazbbscrolllabel_icon.lrs}
+   RegisterComponents('lazbbComponents',[TScrollLabel]);
+end;
+
+constructor TSCrollButton.Create(anOwner: TComponent);
+var
+  i: integer;
+begin
+  inherited Create(anOwner);
+  first:= true;
+  AutoSize:=False;
+  Left:= 30;
+  Top:= 30;
+  Width:= 75;
+  FScrollInterval:=100;
+  FScrolling:=false;
+  FStep:=1;
+  FTimer:=TTimer.Create(Self);
+  FTimer.OnTimer:=@OnTimer;
+  FTimer.Interval:=100;
+  FTimer.Enabled:=True;
+  FTimerSCroll:= TTimer.Create(Self);
+  FTimerSCroll.OnTimer:=@OnTimerScroll;
+  FTimerScroll.Interval:= FScrollInterval;
+  FTimerScroll.Enabled:= False;
+  Parent:= TWinControl(anOwner);
+  Canvas.Font:= self.Font;
+  PrevGlyphwidth:= Glyph.width;
+  PrevWidth:= Width;
+  if Glyph.width=0 then BegTxt:= spacing else BegTxt:= (Glyph.Width div NumGlyphs)+ spacing*2;
+  Spacewidth:= Canvas.TextWidth(' ');
+  MaxTxtWidth:= ClientWidth-BegTxt-spacing;
+  Caption:= '';
+  for i:= 1 to (MaxTxtWidth div spacewidth) do Caption:= Caption+' ';
+
+end;
+
+procedure TSCrollButton.SetScrollCaption(AValue: string);
+begin
+  if FScrollCaption=AValue then Exit;
+  FScrollCaption:= AValue;
+  Invalidate;
+end;
+
+procedure TSCrollButton.SetScrolling(AValue: boolean);
+begin
+  if FScrolling=AValue then Exit;
+  FScrolling:=AValue;
+  //FTimerScroll.Enabled:=AValue;
+end;
+
+procedure TSCrollButton.SetScrollRefresh(aValue: integer);
+begin
+  if FScrollInterval=aValue then Exit;
+  FScrollInterval:=aValue;
+  FTimerScroll.Interval:=aValue;
+  Invalidate;
+end;
+
+procedure TScrollButton.Paint;
+var
+ // txtStyle : TTextStyle;
+ // R : TRect;
+ // TextLeft, TextTop: integer;
+  OldFontColor: TColor;
+begin
+  inherited paint;
+  if ComponentState = [csDesigning] then
+  begin
+    Canvas.TextRect(R, BegTxt, TextTop, FScrollCaption, txtStyle);
+    FTimerScroll.Enabled:= False;
+    exit;
+  end;
+  //R := Rect(BegTxt,0,Width-spacing, Height);
+  //TextTop:= Height;
+  with Canvas do
+  begin
+    //TextTop:= (TextTop-TextHeight(FScrollCaption)) div 2;
+
+    //if (Color<>clNone) and not Transparent then
+    //begin
+    //  Brush.Style:=bsSolid;
+    //  FillRect(R);
+    //end;
+    //Brush.Style:=bsClear;
+    //Font := Self.Font;
+    {FillChar(txtStyle,SizeOf(txtStyle),0);
+    with txtStyle do
+    begin
+ //     Layout := Self.Layout;
+      Opaque := (Color<>clNone) and not Transparent;
+ //     WordBreak := wordWrap;
+ //     SingleLine:= not WordWrap and not HasMultiLine;
+      Clipping := True;
+      ShowPrefix := ShowAccelChar;
+      SystemFont := False;
+      RightToLeft := UseRightToLeftReading;
+      ExpandTabs := True;
+    end; }
+    TextLeft:= BegTxt+spacing;
+    if FScrolling and (txtwidth>MaxTxtWidth) then
+    begin
+      TextRect(R, TextLeft+FOffset, TextTop, FScrollCaption+'-'+FSCrollCaption, txtStyle);
+      FTimerScroll.Enabled:= true;
+    end else
+    begin
+       //TextLeft:= BegTxt+2 ;
+       TextRect(R, BegTxt, TextTop, FScrollCaption, txtStyle);
+       //Caption:= FScrollCaption;
+    end;
+
+    //else TextLeft:= BegTxt ;
+    //DoMeasureTextPosition(TextTop, TextLeft);
+    OldFontColor := Font.Color;
+   { if not IsEnabled then
+    begin
+      Font.Color := clBtnHighlight;
+      TextRect(R, TextLeft+FOffset+1, TextTop, FScrollCaption, txtStyle);
+      Font.Color := clBtnShadow;
+     end; }
+
+    //TextRect(R, TextLeft+FOffset, TextTop, FScrollCaption+' '+FSCrollCaption, txtStyle);
+    Font.Color := OldFontColor;
+    //Offset:= abs(TextLeft +FOffset);
+   // txtlength:=TxtWidth;
+    // allow continuously restart
+    if abs(TextLeft + FOffset) > TxtWidth then
+    FOffset:= -(BegTxt+spacing);
+  end;
+
+end;
+
+procedure TSCrollButton.OnTimer(Sender: TObject);
+var
+  i: integer;
+begin
+   if (glyph.width<>PrevGlyphWidth) or (width<>PrevWidth) then
+   begin
+     if Glyph.width=0 then BegTxt:= spacing else BegTxt:= (Glyph.Width div NumGlyphs)+ spacing*2;
+     MaxTxtWidth:= ClientWidth-BegTxt-spacing;
+     R := Rect(BegTxt,0,Width-spacing, Height);
+     TextTop:= height;
+     With Canvas do
+     begin
+       Spacewidth:= TextWidth(' ');
+       TxtWidth:= TextWidth(FScrollCaption);
+       TextTop:= (TextTop-Canvas.TextHeight(FScrollCaption)) div 2;
+       if (Color<>clNone) and not Transparent then
+       begin
+         Brush.Style:=bsSolid;
+         FillRect(R);
+       end;
+       Brush.Style:=bsClear;
+       Font := Self.Font;
+       //FillChar(txtStyle,SizeOf(txtStyle),0);
+       TextStyle:= Default(TTextStyle);
+       with txtStyle do
+       begin
+ //     Layout := Self.Layout;
+      Opaque := (Color<>clNone) and not Transparent;
+ //     WordBreak := wordWrap;
+ //     SingleLine:= not WordWrap and not HasMultiLine;
+      Clipping := True;
+      ShowPrefix := ShowAccelChar;
+      SystemFont := False;
+      RightToLeft := UseRightToLeftReading;
+      ExpandTabs := True;
+    end;
+     end;
+     Caption:= '';
+     for i:= 1 to (MaxTxtWidth div spacewidth) do Caption:= Caption+' ';
+
+   end;
+
+end;
+
+procedure TSCrollButton.OnTimerSCroll(Sender: TObject);
+
+begin
+  dec (FOffset);
+  Invalidate;
+end;
+
+
+
+end.

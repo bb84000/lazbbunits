@@ -42,7 +42,8 @@ type
   function Charset(s: string): TCharset;
   function RPos (Substr: string; S: string): Integer;
   procedure ImageFitToSize(var img: TImage; imgw, imgh: integer);
-  procedure CropBitmap(InBitmap, OutBitMap : TBitmap; Enabled: Boolean);//X, Y, W, H :Integer);
+  procedure CropBitmap(InBitmap, OutBitMap : TBitmap; Enabled: boolean);//X, Y, W, H :Integer);
+  procedure CropBitmap(InBitmap, OutBitMap : TBitmap; index: integer);
   procedure ResPngToGlyph(Instance: THandle; ResName: string; glyph: Tbitmap);
   function TranslateHttpErrorMsg(ErrMsg: string; HttpErrMsgs: array of string):string;
   function BoolToString(b: boolean): string;
@@ -343,14 +344,35 @@ end;
 
 // Crop speedbutton images to popup menu images
 // Enabled image or disabled image
-procedure CropBitmap(InBitmap, OutBitMap : TBitmap; Enabled: Boolean);//X, Y, W, H :Integer);
+
+procedure CropBitmap(InBitmap, OutBitMap : TBitmap; Enabled: boolean);
+var
+  index:Integer;
 begin
-  OutBitMap.PixelFormat := InBitmap.PixelFormat;
-  OutBitmap.Width:= InBitMap.Height;  // as we can have double width or not in sbuttons
-  OutBitmap.Height:= InBitMap.Height;
-  // First or second image
-  if Enabled then BitBlt(OutBitMap.Canvas.Handle, 0, 0, OutBitmap.Width, OutBitmap.Height, InBitmap.Canvas.Handle, 0, 0, SRCCOPY)
-  else BitBlt(OutBitMap.Canvas.Handle, 0, 0, OutBitmap.Width, OutBitmap.Height, InBitmap.Canvas.Handle, OutBitmap.Height, 0, SRCCOPY);
+ if enabled then index:=0 else index:=1;
+ CropBitmap(InBitmap, OutBitMap, index);
+end;
+
+// Copy image 0,0, etc
+
+procedure CropBitmap(InBitmap, OutBitMap : TBitmap; index: integer);
+var
+  DstR, SrcR: TRect;
+begin
+ OutBitMap.PixelFormat := InBitmap.PixelFormat;
+ OutBitmap.Width:= InBitMap.Height;  // as we can have double width or not in sbuttons
+ OutBitmap.Height:= InBitMap.Height;
+ SrcR.Top:=0;
+ SrcR.Left:=OutBitmap.Width*index;
+ SrcR.Right:=OutBitmap.Width*(index+1);
+ SrcR.Bottom:=InBitmap.Height;
+ // no other images
+ if SrcR.right > InBitmap.width then exit;
+ DstR.Top:=0;
+ DstR.Left:=0;
+ DstR.Right:=OutBitmap.Width;
+ DstR.Bottom:=OutBitmap.Height;
+ OutBitMap.canvas.CopyRect(DstR, InBitMap.Canvas, SrcR);
 end;
 
 // Load png from resource in Bitmap (for instance buttons glyphs. Use RCDATA in RC file

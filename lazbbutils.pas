@@ -12,7 +12,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Buttons, StdCtrls, ExtCtrls, FileInfo,
-  lclintf, LazUTF8, math,  base64, Process;
+  lclintf, LazUTF8, math,  base64, Process, lazbbalert;
 
 type
 
@@ -34,7 +34,8 @@ type
   function IsAnsi2Utf8(st: string): string;
   function IsUtf82Ansi(st: string): string;
   function MsgDlg(const Capt, Msg: string; DlgType: TMsgDlgType;
-      Buttons: TMsgDlgButtons; Captions: ARRAY OF string; HelpCtx: Longint=0; Pos: TPosition=poMainFormCenter): Integer;
+      Buttons: TMsgDlgButtons; Captions: ARRAY OF string; HelpCtx: Longint=0;  Pos: TPosition=poMainFormCenter): Integer;
+  function AlertDlg(Capt: string; Msg: string; Captions: ARRAY OF string; cbEnable: boolean= false; DlgType: TMsgDlgType=mtInformation; Pos: TPosition=poMainFormCenter):  integer;
   function GetVersionInfo(): TVersionInfo;
   function Str2Date (s, format: String): TDateTime;
   function TrimFileExt(FileName: String): String;
@@ -703,6 +704,33 @@ begin
   finally
     Process.Free;
   end;
+end;
+
+// Alert Dialog; parameters are same as MsgDlg
+// Captions: string translations: OKBtn, CancelBtn, checkbox caption
+// cbEnable: show do not show checkbox
+
+function AlertDlg(Capt: string; Msg: string; Captions: ARRAY OF string; cbEnable: boolean= false; DlgType: TMsgDlgType=mtInformation; Pos: TPosition=poMainFormCenter):  integer;
+ var
+  AlBox: TAlertBox;
+  i: integer;
+begin
+  AlBox:= TAlertBox.Create(nil);
+  if length(Capt)>0 then AlBox.Caption:=Capt else AlBox.Caption:='AlertBox';
+  if length(Msg)>0 then AlBox.MAlert.Text:=Msg else AlBox.MAlert.Text:='AlertBox message';
+  AlBox.DlgType:= DlgType;
+  if length(Captions)> 0 then AlBox.BtnOK.Caption:= Captions[0];
+  if length(Captions)> 1  then AlBox.BtnCancel.Caption:= Captions[1];
+  if length(Captions)> 2  then  AlBox.CBNoShowAlert.Caption:= Captions[2];
+  AlBox.CBNoShowAlert.visible:= cbEnable;
+  if not cbEnable then
+  begin
+    //Btn
+  end;
+  AlBox.Position:= Pos;
+  result:= AlBox.ShowModal;
+  if AlBox.CBNoShowAlert.Checked then result:= result+9;  //mrYestoAll if mrOK and checked
+  AlBox.Destroy;
 end;
 
 end.

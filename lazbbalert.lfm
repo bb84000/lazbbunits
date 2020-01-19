@@ -3,6 +3,7 @@ object AlertBox: TAlertBox
   Height = 135
   Top = 288
   Width = 389
+  BorderStyle = bsDialog
   Caption = 'AlertBox'
   ClientHeight = 135
   ClientWidth = 389
@@ -51,7 +52,7 @@ object AlertBox: TAlertBox
     TabOrder = 1
   end
   object BtnCancel: TBitBtn
-    Left = 216
+    Left = 296
     Height = 25
     Top = 96
     Width = 75
@@ -64,7 +65,7 @@ object AlertBox: TAlertBox
     TabOrder = 2
   end
   object BtnOK: TBitBtn
-    Left = 296
+    Left = 216
     Height = 25
     Top = 96
     Width = 75

@@ -34,7 +34,7 @@ var
 implementation
 
 {$R *.lfm}
-{$R lazbbalert.rc}
+{$R lazbbalert.res}
 
 { TAlertBox }
 

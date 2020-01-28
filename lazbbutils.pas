@@ -1,8 +1,7 @@
-{*********************************************************************************}
-{ Unité lazbbutils : cross platform utilities                                     }
-{ bb - sdtp - october 2019                                                        }
-{ Syntax just before the function implementation                                  }
-{*********************************************************************************}
+{*******************************************************************************}
+{ Unité lazbbutils : cross platform utilities                                   }
+{ bb - sdtp - october 2019                                                      }
+{*******************************************************************************}
 
 unit lazbbutils;
 
@@ -146,7 +145,7 @@ end;
 // Result: Modal result
 
 function MsgDlg(const Capt, Msg: string; DlgType: TMsgDlgType;
-  Buttons: TMsgDlgButtons; Captions: ARRAY OF string; HelpCtx: Longint=0; Pos: TPosition=poMainFormCenter	): Integer;
+  Buttons: TMsgDlgButtons; Captions: ARRAY OF string; HelpCtx: Longint=0; Pos: TPosition=poMainFormCenter): Integer;
 var
   aMsgdlg: TForm;
   i: Integer;
@@ -713,11 +712,10 @@ end;
 function AlertDlg(Capt: string; Msg: string; Captions: ARRAY OF string; cbEnable: boolean= false; DlgType: TMsgDlgType=mtInformation; Pos: TPosition=poMainFormCenter):  integer;
  var
   AlBox: TAlertBox;
-  i: integer;
 begin
   AlBox:= TAlertBox.Create(nil);
   if length(Capt)>0 then AlBox.Caption:=Capt else AlBox.Caption:='AlertBox';
-  if length(Msg)>0 then AlBox.MAlert.Text:=Msg else AlBox.MAlert.Text:='AlertBox message';
+  if length(Msg)>0 then AlBox.LAlert.Caption:=Msg else AlBox.LAlert.Caption:='AlertBox message';
   AlBox.DlgType:= DlgType;
   if length(Captions)> 0 then AlBox.BtnOK.Caption:= Captions[0];
   if length(Captions)> 1  then AlBox.BtnCancel.Caption:= Captions[1];

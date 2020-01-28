@@ -1,60 +1,56 @@
 object AlertBox: TAlertBox
-  Left = 1005
-  Height = 135
-  Top = 288
-  Width = 389
+  Left = 894
+  Height = 129
+  Top = 283
+  Width = 400
   BorderStyle = bsDialog
   Caption = 'AlertBox'
-  ClientHeight = 135
-  ClientWidth = 389
+  ClientHeight = 129
+  ClientWidth = 400
   OnCreate = FormCreate
   OnShow = FormShow
   Position = poMainFormCenter
   LCLVersion = '2.0.6.0'
-  object Panel1: TPanel
-    Left = 8
+  object PnlMessage: TPanel
+    Left = 10
     Height = 74
     Top = 8
-    Width = 366
+    Width = 380
+    Alignment = taLeftJustify
+    BevelInner = bvLowered
     ClientHeight = 74
-    ClientWidth = 366
+    ClientWidth = 380
     TabOrder = 0
     object Image1: TImage
       Left = 10
       Height = 32
-      Top = 4
+      Top = 5
       Width = 32
     end
-    object MAlert: TMemo
-      Left = 53
-      Height = 62
-      Top = 4
-      Width = 303
-      BorderStyle = bsNone
-      Color = clBtnFace
-      Font.Color = clWindowText
-      Font.Height = -11
-      Font.Name = 'MS Sans Serif'
-      Lines.Strings = (
-        'MAlert'
-      )
-      ParentFont = False
-      ReadOnly = True
-      TabOrder = 0
+    object LAlert: TLabel
+      Left = 56
+      Height = 15
+      Top = 5
+      Width = 312
+      Anchors = [akTop, akLeft, akRight]
+      Caption = 'AlertText'
+      Constraints.MinWidth = 312
+      ParentColor = False
+      WordWrap = True
     end
   end
   object CBNoShowAlert: TCheckBox
     Left = 14
     Height = 19
-    Top = 99
+    Top = 95
     Width = 198
     Caption = 'Ne plus afficher cet avertissement'
     TabOrder = 1
   end
   object BtnCancel: TBitBtn
-    Left = 296
+    Left = 315
     Height = 25
-    Top = 96
+    Top = 93
     Width = 75
     Cancel = True
     DefaultCaption = True
@@ -65,9 +61,9 @@ object AlertBox: TAlertBox
     TabOrder = 2
   end
   object BtnOK: TBitBtn
-    Left = 216
+    Left = 230
     Height = 25
-    Top = 96
+    Top = 93
     Width = 75
     Default = True
     DefaultCaption = True

@@ -698,7 +698,7 @@ begin
     for I := 1 to GetEnvironmentVariableCount do
       Process.Environment.Add(GetEnvironmentString(I));
     Process.Executable := exec;
-    Process.Parameters.Assign (param);
+    if length(param.text)>0 then Process.Parameters.Assign (param);
     Process.Execute;
   finally
     Process.Free;

@@ -1,6 +1,6 @@
 {******************************************************************************}
 { lazbbosversion - Returns OS version information (Windows, Linux and Mac      }
-{ sdtp - bb - november 2019                                                    }
+{ sdtp - bb - october 2020                                                         }
 {******************************************************************************}
 unit lazbbosversion;
 
@@ -292,29 +292,31 @@ Type
  var
    // If you want translate, or add new versions, you can do it in main form.
    // Versup count must match build count !
-   Win10VerSup: string= 'Unknown version'+#10+
-                          'v 1507 "Initial Update"'+#10+
-                          'v 1511 "November Update"'+#10+
-                          'v 1607 "Anniversary Update"'+#10+
-                          'v 1703 "Creators Update"'+#10+
-                          'v 1709 "Fall Creators Update"'+#10+
-                          'v 1803 "April 2018 Update"'+#10+
-                          'v 1809 "October 2018 Update"'+#10+
-                          'v 1903 "May 2019 Update"'+#10+
-                          'v 1909 "November 2019 Update"'+#10+
-                          'v 2003 "Spring 2020 Update"';
+   Win10VerSup: string= 'Unknown version'+LineEnding+
+                          'v 1507 "Initial Update"'+LineEnding+
+                          'v 1511 "November Update"'+LineEnding+
+                          'v 1607 "Anniversary Update"'+LineEnding+
+                          'v 1703 "Creators Update"'+LineEnding+
+                          'v 1709 "Fall Creators Update"'+LineEnding+
+                          'v 1803 "April 2018 Update"'+LineEnding+
+                          'v 1809 "October 2018 Update"'+LineEnding+
+                          'v 1903 "May 2019 Update"'+LineEnding+
+                          'v 1909 "November 2019 Update"'+LineEnding+
+                          'v 2004 "May 2020 Update"'+LineEnding+
+                          'v 20H2 "October 2020 Update"';
 
-   Win10Verbuild: string= '0'+#10+
-                           '10240'+#10+
-                           '10586'+#10+
-                           '14393'+#10+
-                           '15063'+#10+
-                           '16299'+#10+
-                           '17134'+#10+
-                           '17763'+#10+
-                           '18362'+#10+
-                           '18363'+#10+
-                           '19023';
+   Win10Verbuild: string= '0'+LineEnding+
+                           '10240'+LineEnding+
+                           '10586'+LineEnding+
+                           '14393'+LineEnding+
+                           '15063'+LineEnding+
+                           '16299'+LineEnding+
+                           '17134'+LineEnding+
+                           '17763'+LineEnding+
+                           '18362'+LineEnding+
+                           '18363'+LineEnding+
+                           '19041'+LineEnding+
+                           '19042';
 
   procedure GetSysInfo(var OsInfo: TOSInfo);
 

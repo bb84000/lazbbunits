@@ -14,6 +14,7 @@ uses
 
 function VersionToInt (VerStr: String): int64;
 function GetLastVersion (url, prog: string; var errmsg: string): string ;
+function ChkLastVersion (prog: string; var errmsg: string): string;
 
 implementation
 
@@ -86,6 +87,41 @@ begin
   end;
   ProgList.Free;
   MyHTTPCli.Free;
+end;
+
+// Get new version on Github
+// Get latest release page
+// extract version value fromn header title
+
+function ChkLastVersion(prog: string; var errmsg: string): string;
+const
+  GitUrl = 'https://github.com/bb84000/';
+var
+  MyHTTPCli: TFPHTTPClient;
+  spage: string;
+  stagurl: string;
+  titlebeg, titleend: Integer;
+  A: TStringArray;
+begin
+  result:= '';
+  { SSL initialization has to be done by hand here }
+  InitSSLInterface;
+  MyHTTPCli:= TFPHTTPClient.Create(nil);
+  try
+    MyHTTPCli.IOTimeout:= 5000;
+    MyHTTPCli.AllowRedirect:= true;
+    MyHTTPCli.AddHeader('User-Agent','Mozilla 5.0 (compatible ct)');
+    spage:= MyHTTPCli.Get (GitUrl+prog+'/releases/latest');
+    titlebeg:= Pos('<title>', spage);
+    titleend:= Pos('</title>', spage);
+    stagurl:= Copy(spage, titlebeg+7,titleend-titlebeg-7);
+    A:= stagurl.Split(' ');
+    result:= A[2];
+    MyHTTPCli.Free;
+  except
+    on e:Exception do
+    errmsg:= (e.message);
+  end;
 end;
 
 end.

@@ -1,8 +1,10 @@
 {******************************************************************************}
-{ lazbbosversion - Returns OS version information (Windows, Linux and Mac      }
-{ sdtp - bb - october 2020                                                         }
+{ lazbbosver - Returns OS version information (Windows, Linux and Mac          }
+{ Replacement for lazbbosversion unit, uses class instead record               }
+{ sdtp - bb - november 2020                                                    }
+{ Localization data in lazbbosver.lng to copy in application .lng file         }
 {******************************************************************************}
-unit lazbbosversion;
+unit lazbbosver;
 
 {$mode objfpc}{$H+}
 
@@ -14,27 +16,56 @@ uses
   {$ELSE}
     process,
   {$ENDIF}
-  Classes, SysUtils, lazbbutils;
+  Classes, SysUtils, lazbbutils, lazbbinifiles;
 
 Type
 
-  TOSInfo = record
-    OSName: string;
-    // Unix
-    KernelName: string;
-    KernelRelease: string;
-    KernelVersion: string;
-    NetworkNode: string;
-    Architecture: string;
+  TOSVersion = class
+  private
+    fOSName: string;
+    fArchitecture: string;
     // Windows
-    VerTyp: Integer;       // Windows type
-    VerMaj    : Integer;   // : Major version number
-    VerMin    : Integer;   // Minor version number
-    VerBuild  : Integer;   // Build version number
-    VerProd   : String;    // Version type
-    VerSup    : String;    // Additional version information
-    VerMask   : Integer;   // Product suite mask;
-    VerDetail: string;     //Description of the OS, with version, build etc.
+    FPID : Integer; {platform ID}
+    FVerTyp, FVerPro : Integer;
+    FVerProd: String;
+    fVerProEx: DWORD;
+    FVerSup : String;
+    FVerMaj, FVerMin, FVerBuild: Integer;
+    FVerMask : Integer;
+    FSrvPMaj: Word;
+    fSrvPMin: Word;
+    fProdTyp: BYTE;
+    fReserved: BYTE;
+    FVerDetail: string;     //Description of the OS, with version, build etc.
+        // Unix
+    fKernelName: string;
+    fKernelRelease: string;
+    fKernelVersion: string;
+    fNetworkNode: string;
+    ProdStr: array of String;
+    Win10Build: array of array of String;
+     procedure localize(lang: string; LangFile: TBbInifile);
+  public
+    constructor Create (lang: string='en'; LangFile: TBbInifile=nil); overload;
+    destructor Destroy; override;
+    procedure GetSysInfo;
+    {$IFDEF WINDOWS}
+      procedure GetNT32Info;
+    {$ENDIF}
+    property OSName: string read FOSName;
+    property Architecture: string read fArchitecture;
+    property KernelName: string read FKernelName;
+    property KernelRelease: string read FKernelRelease;
+    property KernelVersion: string read FKernelVersion;
+    property NetworkNode: string read FNetworkNode;
+    property VerTyp: integer read FVerTyp;      // Windows type
+    property VerMaj: integer read FVerMaj;      // major version number
+    property VerMin: integer read FVerMin;      // Minor version number
+    property VerProd : String read FVerProd;    // Version type
+    property VerSup : String read FVerSup;      // Additional version information
+    property VerMask : Integer read FVerMask;   // Product suite mask;
+    property VerBuild: integer read FVerBuild;  // Build number
+    property VerDetail: string read FVerDetail; //Description of the OS, with version, build etc.
   end;
 
   {$IFDEF WINDOWS}
@@ -75,7 +106,7 @@ Type
   OSVERSIONINFOEXW = _OSVERSIONINFOEXW;
   OSVERSIONINFOEX = OSVERSIONINFOEXA;
 
-  const
+const
     VER_NT_WORKSTATION       = 1;
     VER_NT_DOMAIN_CONTROLLER = 2;
     VER_NT_SERVER            = 3;
@@ -87,7 +118,7 @@ Type
     VER_SUITE_DATACENTER               = $0080;
     VER_SUITE_PERSONAL                 = $0200;
 
-    StatStr: array[0..22] of String = ('Microsoft Windows 32',
+    StatStr: array of String = ('Microsoft Windows 32',
                                     'Microsoft Windows 95',
                                     'Microsoft Windows 95-OSR2',
                                     'Microsoft Windows 98',
@@ -104,19 +135,17 @@ Type
                                     'Microsoft Windows 7',
                                     'Microsoft Windows 8',
                                     'Microsoft Windows Server 2012',
-                                    'Windows 8.1',
+                                    'Microsoft Windows 8.1',
                                     'Windows Server 2012 R2',
                                     'Microsoft Windows 10',
                                     'Windows Server 2016',
                                     'Windows Server 2019',
                                     'Système inconnu');
 
-   ProdStr: array [0..3] of String = ('',
-                                      'Home',
-                                      'Professional',
-                                      'Server');
 
-   // Valeurs en hexa pour info
+
+
+      // Valeurs en hexa pour info
    ProdStrEx: array [0..$A3] of String =('Unknown product',                                     //00
                                          'Ultimate Edition',                                    //01
                                          'Home Basic Edition',                                  //02
@@ -282,48 +311,88 @@ Type
                                          'Windows 10 Pro for Workstations',                       //A2
                                          'Unknown');                                              //A3
 
-  var
+
+
+    ProductStr: array [0..3] of String =   ('',
+                                         'Home',
+                                         'Professional',
+                                         'Server');
+    // First element: build number, second element: english, third element: french
+    Windows10Build: array [0..12,0..1] of String =(('00000',    'Unknown version'),
+                                              ('10240', 'v 1507 "July 2015 update"'),
+                                              ('10586', 'v 1511 "November 2015 update"'),
+                                              ('14393', 'v 1607 "July 2016 (Anniversary update)"'),
+                                              ('15063', 'v 1703 "April 2017 (Creators update)"'),
+                                              ('16299', 'v 1709 "October 2017 (Fall Creators update)"'),
+                                              ('17134', 'v 1803 "April 2018 update"'),
+                                              ('17763', 'v 1809 "October 2018 update"'),
+                                              ('18362', 'v 1903 "May 2019 update"'),
+                                              ('18363', 'v 1909 "November 2019 update"'),
+                                              ('19041', 'v 2004 "May 2020 update"'),
+                                              ('19042', 'v 20H2 "October 2020 update"'),
+                                              ('20241', 'v 21H1 "Spring 2021 updsate"'));
+
+
+    var
     fVerProEx: DWORD;
     // GetProductInfo doesn't exists before Vista, so we load it dynamically
     // We need to test it is assigned before use it in the unit
     GetProductInfo: function (dwOSMajorVersion, dwOSMinorVersion,
                             dwSpMajorVersion, dwSpMinorVersion: DWORD;
                             var pdwReturnedProductType: DWORD): BOOL stdcall = NIL;
- {$ENDIF}
- var
-   // If you want translate, or add new versions, you can do it in main form.
-   // Versup count must match build count !
-   Win10VerSup: string= 'Unknown version'+LineEnding+
-                          'v 1507 "Initial Update"'+LineEnding+
-                          'v 1511 "November Update"'+LineEnding+
-                          'v 1607 "Anniversary Update"'+LineEnding+
-                          'v 1703 "Creators Update"'+LineEnding+
-                          'v 1709 "Fall Creators Update"'+LineEnding+
-                          'v 1803 "April 2018 Update"'+LineEnding+
-                          'v 1809 "October 2018 Update"'+LineEnding+
-                          'v 1903 "May 2019 Update"'+LineEnding+
-                          'v 1909 "November 2019 Update"'+LineEnding+
-                          'v 2004 "May 2020 Update"'+LineEnding+
-                          'v 20H2 "October 2020 Update"'+LineEnding+
-                          'v 21H1 "Spring 2021 Update"';
 
-   Win10Verbuild: string= '0'+LineEnding+
-                           '10240'+LineEnding+
-                           '10586'+LineEnding+
-                           '14393'+LineEnding+
-                           '15063'+LineEnding+
-                           '16299'+LineEnding+
-                           '17134'+LineEnding+
-                           '17763'+LineEnding+
-                           '18362'+LineEnding+
-                           '18363'+LineEnding+
-                           '19041'+LineEnding+
-                           '19042'+LineEnding+
-                           '20000';
 
-  procedure GetSysInfo(var OsInfo: TOSInfo);
+
+
+     {$ENDIF}
 
 implementation
+
+
+
+// lang: "en", "fr" see content of .lng files
+// LangFile: Tbbinifile
+// Default language english
+
+constructor TOSVersion.Create (lang: string='en'; LangFile: TBbInifile=nil);
+begin
+  inherited Create;
+  {$IFDEF WINDOWS}
+    Pointer(GetProductInfo) := GetProcAddress(GetModuleHandle('KERNEL32.DLL'),
+                                    'GetProductInfo');
+    localize(lang, LangFile);
+  {$ENDIF}
+
+  GetSysInfo;
+end;
+
+// Windows 10 strings localization  in lazbbosver.lng
+// Copy the content in the application localization file: lngfile
+
+
+procedure TOSVersion.localize(lang:string; LangFile: TBbInifile);
+var
+  i: integer;
+begin
+  // populate dynamic arrays for product details and versions with default values
+  SetLength(ProdStr, Length(ProductStr));
+  for i:= 0 to high(ProdStr) do ProdStr[i]:= ProductStr[i];
+  SetLength(Win10Build, length(Windows10Build), length(Windows10Build[0]));
+  for i:= 0 to high(Win10Build) do Win10Build[i,0]:= Windows10Build[i,0];
+  for i:= 0 to high(Win10Build) do Win10Build[i,1]:= Windows10Build[i,1];
+  if assigned (Langfile) then
+  try
+    for i:= 1 to high(ProdStr) do ProdStr[i]:= LangFile.ReadString(lang,ProductStr[i],ProductStr[i]);
+    for i:= 0 to high(Win10Build) do Win10Build[i,1]:= LangFile.ReadString(lang,Windows10Build[i,0],Windows10Build[1,1]);
+  except
+  end;
+end;
+
+destructor TOSVersion.Destroy;
+begin
+  inherited;
+  if Assigned(GetProductInfo) then  FreeAndNil(GetProductInfo);
+end;
 
 
 {$IFDEF WINDOWS}
@@ -355,45 +424,20 @@ begin
   {$ENDIF}
 end;
 
-procedure GetSysInfo(var OsInfo: TOSInfo);
+procedure TOSVersion.GetSysInfo;
 var
   OsViEx : TOSVersionInfoEx;
   OsVi : TOSVersionInfo;
-  dwOSMajorVersion, dwOSMinorVersion,
-  dwSpMajorVersion, dwSpMinorVersion: DWORD;
-  FPID : Integer; {platform ID}
-  FVerTyp, FVerPro : Integer;
-  fVerProEx: DWORD;
-  FVerSup : String;
-  FVerMaj, FVerMin, FVerBuild: Integer;
-  FVerMask : Integer;
-  FSrvPMaj: Word;
-  fSrvPMin: Word;
-  fProdTyp: BYTE;
-  fReserved: BYTE;
-  slWin10Versup: TStringList;
-  slWin10Verbuild: TStringList;
-  i: integer;
 begin
-  Pointer(GetProductInfo) := GetProcAddress(GetModuleHandle('KERNEL32.DLL'),
-                                    'GetProductInfo');
   fVerProEx:= 0;
-  slWin10Versup:= TStringList.Create;
-  slWin10Versup.text:= Win10VerSup;
-  slWin10Verbuild:= TStringList.Create;
-  slWin10Verbuild.text:= Win10Verbuild;
-
   // Free Pascal GetVersionEx function use OSVersionInfo structure instead OSVersionInfoEx
   // We call it with an OSVersionInfo variable with OSVersionInfoEx size
   OsViEx:= Default(TOSVersionInfoEx);
-  dwOSMajorVersion:= 0;
-  dwOSMinorVersion:= 0;
-  dwSpMajorVersion:= 0;
-  dwSpMinorVersion:= 0;
   OsVi.dwOSVersionInfoSize:= SizeOf(TOSVersionInfoEx);
   GetVersionEx (Osvi);
   // Then we move memory to the OSVersionInfoEx variable and we get extra items.
   Move(OsVi, OsViEx,SizeOf(TOSVersionInfoEx));
+
   With OsViEx do
   begin
     fVerMaj:=dwMajorVersion;
@@ -406,25 +450,55 @@ begin
     fVerMask:= wSuiteMask;
     fProdTyp:= wProductType;
     fReserved:= wReserved;
-    // Inconnu par défaut
+        // Inconnu par défaut
     fVerTyp:= High(StatStr);
     Case fPid of
-    0 : fVerTyp:= 0;                                          // Win32s
+    0 : fVerTyp:= 0;                                                       // Win32s
     1 : If fVerMin < 10 then
         begin
-          If fVerBuild <= 1000 then fVerTyp:= 1                // win95 4.00 build 950
-          else fVerTyp:= 2;                                     // Win95-OSR2 4.00 950c
+          If fVerBuild <= 1000 then fVerTyp:= 1                            // win95 4.00 build 950
+          else fVerTyp:= 2;                                                // Win95-OSR2 4.00 950c
         end else
         begin
-          // Win98 4.10 build 1999
-          if (fVerBuild >= 0) and (fVerBuild < 2000) then fVerTyp:= 3;
-          // Win98 SE 4.10 build 2222
-          if (fVerBuild >= 2000) and (fVerBuild < 3000) then fVerTyp:= 4;
-          //Win ME 4.90 build 3000
-          if fVerBuild >= 3000 then fVerTyp:= 5 ;
+          if (fVerBuild >= 0) and (fVerBuild < 2000) then fVerTyp:= 3;     // Win98 4.10 build 1999
+          if (fVerBuild >= 2000) and (fVerBuild < 3000) then fVerTyp:= 4;  // Win98 SE 4.10 build 2222
+          if fVerBuild >= 3000 then fVerTyp:= 5 ;                          //Win ME 4.90 build 3000
         end;
-    2 : begin                                                 //VER_PLATFORM_WIN32_NT
-          case fVerMaj of
+    2: begin                                                               //VER_PLATFORM_WIN32_NT
+         GetNT32Info;
+       end;
+    end;
+
+  end;
+  FOSName:= StatStr[High(StatStr)];
+  if (fVerTyp < High(StatStr)) then FOSName:= StatStr[fVerTyp];
+  try
+    if fVerProEx > 0 then fVerProd:=  ProdStrEx[fVerProEx] else
+    fVerProd:= ProdStr[fVerPro];
+  except
+    fVerProd:= ProdStr[0];
+  end;
+  //s:= GetEnvironmentVariable('PROCESSOR_ARCHITECTURE');
+  //if s='AMD64' then s:= 'x86_64';
+  if IsWin64 then
+  fArchitecture:= 'x86_64' else
+  fArchitecture:= 'x86';
+
+  fVerDetail:= fOSName+' '+fVerProd+' - '+IntToStr(fVerMaj)+'.'+IntToStr(fVerMin)
+                 +'.'+IntToStr(fVerBuild)+' - '+fVerSup+' - '+fArchitecture;
+end;
+
+procedure TOSVersion.GetNT32Info ;
+var
+  dwOSMajorVersion, dwOSMinorVersion,
+  dwSpMajorVersion, dwSpMinorVersion: DWORD;
+  i: integer;
+begin
+  dwOSMajorVersion:= 0;
+  dwOSMinorVersion:= 0;
+  dwSpMajorVersion:= 0;
+  dwSpMinorVersion:= 0;
+  case fVerMaj of
             3: fVerTyp:= 6;  //NT 3.5
             4: fVerTyp:= 7;  //NT 4
             5: begin
@@ -521,7 +595,7 @@ begin
                              fVerProEx );
                   if fVerProEx = $ABCDABCD then fVerProEx:= High(ProdStrEx);
                 end;
-                case fVerMin of       // Windows Vista
+                case fVerMin of       // Windows 10
                    0: begin
                         case fProdTyp of
                           VER_NT_WORKSTATION:
@@ -531,14 +605,13 @@ begin
                             then fVerPro:= 1     //Home Edition
                             else fVerPro:= 2;     //Professional
                             // Match builds to Win 10 version commercial name
-                            // Build numbers are in Win10Verbuild list
-                            // Commercial names are in Win10Versup list
-                            // The lists can be updated from the calling application
-                            FVersup:= slWin10Versup.Strings[0]; //'Unknown version';
-                            for i:= 0 to slWin10Verbuild.Count-1 do
-                              if FVerBuild=StringToInt(slWin10Verbuild.Strings[i]) then
+                            // Build numbers are in Win10build array
+                            // The array can be updated from the calling application
+                            FVersup:= Win10Build[0, 1]; //'Unknown version';
+                            for i:= 0 to length(Win10build) do
+                              if FVerBuild=StringToInt(Win10build[i,0]) then
                               begin
-                                FVersup:= slWin10Versup.Strings[i];
+                                FVersup:= Win10Build[i, 1];
                                 break;
                               end;
                           end else
@@ -556,40 +629,13 @@ begin
                     end;
                end;
           end;            //case fVermaj
-        end;              //fPid= 2
-    end;
-
-  end;
-  OSInfo:= Default(TOSInfo);
-  OSInfo.OSName:= StatStr[fVerTyp];
-  try
-    if fVerProEx > 0 then OSInfo.VerProd:=  ProdStrEx[fVerProEx] else
-    OSInfo.VerProd:= ProdStr[fVerPro];
-  except
-    OSInfo.VerProd:= ProdStr[0];
-  end;
-  //s:= GetEnvironmentVariable('PROCESSOR_ARCHITECTURE');
-  //if s='AMD64' then s:= 'x86_64';
-  if IsWin64 then
-  OSInfo.Architecture:= 'x86_64' else
-  OSInfo.Architecture:= 'x86';
-  OSInfo.VerMaj:= FVerMaj;
-  OSInfo.VerTyp:=FVerTyp;
-  OSInfo.VerMaj:= FVerMaj;
-  OSInfo.VerMin:= FVerMin;
-  OSInfo.VerBuild:= FVerBuild;
-  OSInfo.VerSup:= FVerSup;
-  OSInfo.VerMask:= FVerMask;
-  OSInfo.VerDetail:= OSInfo.OSName+' '+OSInfo.VerProd+' - '+IntToStr(OSInfo.VerMaj)+'.'+IntToStr(OSInfo.VerMin)
-                 +'.'+IntToStr(OSInfo.VerBuild)+' - '+OSInfo.VerSup+' - '+OsInfo.Architecture;
-  slWin10Versup.Free;
-  slWin10Verbuild.Free;
 end;
 
-
 // End of Windows code, begin Linux, Unix or Mac code
+
+
 {$ELSE}
-  procedure GetSysInfo(var OsInfo: TOSInfo);
+  procedure TOSVersion.GetSysInfo;
   var
     OSInfo: TOSInfo;
     P: TProcess;
@@ -608,17 +654,16 @@ end;
       P.Options:= [poWaitOnExit, poUsePipes];
       P.Executable:= 'uname';
       P.Parameters.Add('');
-      OSInfo.OSName:= ExecParam('o');
-      OSInfo.KernelName:= ExecParam('s');
-      OSInfo.KernelRelease:= ExecParam('r');
-      OSInfo.KernelVersion:= ExecParam('v');
-      OSInfo.NetworkNode:= ExecParam('n');
-      OSInfo.Architecture:= ExecParam('m');
+      fOSName:= ExecParam('o');
+      fKernelName:= ExecParam('s');
+      fKernelRelease:= ExecParam('r');
+      fKernelVersion:= ExecParam('v');
+      fNetworkNode:= ExecParam('n');
+      fArchitecture:= ExecParam('m');
       P.Free;
-      OSInfo.VerDetail:= OSInfo.OSName+' '+OSInfo.KernelName+' '+OSInfo.KernelVersion;
+      fVerDetail:= fOSName+' '+fKernelName+' '+fKernelVersion;
     End;
 {$ENDIF}
-
 
 end.
 

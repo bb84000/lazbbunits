@@ -149,7 +149,8 @@ end;
 
 function TBbIniFile.ReadString(const Section, Ident, Default: string): string;
 begin
-  result:= IniFile.ReadString(Section, Ident, Default);
+   result:= IniFile.ReadString(Section, Ident, Default);
+
 end;
 
 

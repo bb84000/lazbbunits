@@ -357,6 +357,21 @@ implementation
 constructor TOSVersion.Create (lang: string='en'; LangFile: TBbInifile=nil);
 begin
   inherited Create;
+  // Initialize variables
+  FOSName:='';
+  fArchitecture:='';
+  FKernelName:='';
+  FKernelRelease:='';
+  FKernelVersion:='';
+  FNetworkNode:='';
+  FVerTyp:=0 ;
+  FVerMaj:=0;
+  FVerMin:=0;
+  FVerProd:='';
+  FVerSup:='';
+  FVerMask:=0;
+  FVerBuild:=0;
+  FVerDetail:='';
   {$IFDEF WINDOWS}
     Pointer(GetProductInfo) := GetProcAddress(GetModuleHandle('KERNEL32.DLL'),
                                     'GetProductInfo');
@@ -437,7 +452,6 @@ begin
   GetVersionEx (Osvi);
   // Then we move memory to the OSVersionInfoEx variable and we get extra items.
   Move(OsVi, OsViEx,SizeOf(TOSVersionInfoEx));
-
   With OsViEx do
   begin
     fVerMaj:=dwMajorVersion;

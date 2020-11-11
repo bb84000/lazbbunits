@@ -1,24 +1,24 @@
 object AboutBox: TAboutBox
-  Left = 512
-  Height = 175
-  Top = 185
-  Width = 325
+  Left = 1006
+  Height = 197
+  Top = 278
+  Width = 350
   BorderStyle = bsDialog
-  ClientHeight = 175
-  ClientWidth = 325
+  ClientHeight = 197
+  ClientWidth = 350
   OnActivate = FormActivate
   OnChangeBounds = FormChangeBounds
   Position = poMainFormCenter
-  LCLVersion = '2.0.4.0'
+  LCLVersion = '2.0.10.0'
   object PnlDesc: TPanel
-    Left = 9
-    Height = 115
-    Top = 9
-    Width = 310
+    Left = 7
+    Height = 136
+    Top = 8
+    Width = 336
     BevelInner = bvRaised
     BevelOuter = bvLowered
-    ClientHeight = 115
-    ClientWidth = 310
+    ClientHeight = 136
+    ClientWidth = 336
     TabOrder = 0
     object Image1: TImage
       Left = 10
@@ -30,7 +30,7 @@ object AboutBox: TAboutBox
       Left = 0
       Height = 15
       Top = 10
-      Width = 301
+      Width = 336
       Alignment = taCenter
       AutoSize = False
       Caption = 'Product Name'
@@ -38,10 +38,10 @@ object AboutBox: TAboutBox
       ParentShowHint = False
     end
     object LVersion: TLabel
-      Left = 3
+      Left = 0
       Height = 15
-      Top = 30
-      Width = 301
+      Top = 35
+      Width = 336
       Alignment = taCenter
       AutoSize = False
       Caption = 'Version'
@@ -49,10 +49,10 @@ object AboutBox: TAboutBox
       ShowAccelChar = False
     end
     object LUpdate: TLabel
-      Left = 3
+      Left = 0
       Height = 15
-      Top = 70
-      Width = 301
+      Top = 110
+      Width = 336
       Alignment = taCenter
       AutoSize = False
       Caption = 'Update'
@@ -67,22 +67,24 @@ object AboutBox: TAboutBox
       ParentShowHint = False
       ShowHint = True
       OnClick = LURLClick
+      OnMouseDown = LabelMouseDown
+      OnMouseUp = LabelMouseUp
     end
     object LCopyright: TLabel
-      Left = 3
+      Left = 0
       Height = 15
-      Top = 50
-      Width = 301
+      Top = 60
+      Width = 336
       Alignment = taCenter
       AutoSize = False
       Caption = 'Copyright'
       ParentColor = False
     end
     object LWebSite: TLabel
-      Left = 3
+      Left = 0
       Height = 15
-      Top = 90
-      Width = 301
+      Top = 85
+      Width = 336
       Alignment = taCenter
       AutoSize = False
       Caption = 'Website'
@@ -96,12 +98,14 @@ object AboutBox: TAboutBox
       ParentFont = False
       ParentShowHint = False
       OnClick = LURLClick
+      OnMouseDown = LabelMouseDown
+      OnMouseUp = LabelMouseUp
     end
   end
   object BtnOK: TBitBtn
-    Left = 125
+    Left = 137
     Height = 30
-    Top = 136
+    Top = 152
     Width = 75
     Anchors = [akTop]
     Default = True

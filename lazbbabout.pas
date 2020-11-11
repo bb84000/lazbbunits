@@ -1,5 +1,6 @@
 {****************************************************************************** }
 { lazbbabout - About box for author applications                                }
+{ Check new versions functions                                                  }
 { bb - sdtp - november 2019                                                     }
 {Can change with to adapt to program                                            }
 {*******************************************************************************}
@@ -11,7 +12,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  Buttons, lclintf;
+  Buttons, lclintf, fphttpclient, fpopenssl, openssl, opensslsockets;
 
 type
 
@@ -28,6 +29,10 @@ type
     PnlDesc: TPanel;
     procedure FormActivate(Sender: TObject);
     procedure FormChangeBounds(Sender: TObject);
+    procedure LabelMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure LabelMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
     procedure LURLClick(Sender: TObject);
   private
 
@@ -36,8 +41,21 @@ type
     UrlUpdate: String;
     UrlWebsite: String;
     LastUpdate: TDateTime;
-
+    ChkVerUrl: String;
+    Version: String;
+    LastVersion: String;
+    sUpdateAvailable: string;
+    sNoUpdateAvailable: string;
+    ProgName: String;
+    Checked, NewVersion: Boolean;
+    function ChkNewVersion (url: string; var errmsg: string): string;
   end;
+  // Version check functions
+  function VersionToInt (VerStr: String): int64;
+  function GetLastVersion (url, prog: string; var errmsg: string): string ;
+
+
+
 
 var
   AboutBox: TAboutBox;
@@ -45,6 +63,113 @@ var
 implementation
 
 {$R *.lfm}
+
+// Convert version string (a.b.c.d) to int64
+// "d" is the lower word, "a" is the higher word.
+// Equivalent to d+c*65636+b*65636*65636*a*65636*65636*65636
+// returns -1 on error
+
+function  VersionToInt (VerStr: String): int64;
+var
+  A: TStringArray;
+  b: array [0..3] of word;
+  i: integer;
+begin
+  Result:= -1;
+  if length(VerStr) > 0 then
+  begin
+    A:= VerStr.Split('.');
+    try
+      {$IFDEF ENDIAN_LITTLE}
+        for i:= 3 downto 0 do b[i]:= StrToInt(A[3-i]);
+      {$ENDIF}
+      {$IFDEF ENDIAN_BIG}
+         for i:= 0 to 3 do b[i]:= StrToInt(A[i]);
+      {$ENDIF}
+      result:= int64(b);
+    except
+      Result:= -1;
+    end;
+  end;
+end;
+
+// Retrieve last update form author site.
+// version file is a csv, separator: comma, first field: program name, second field: version (string: 'a.b.c.d')
+// Other fields can be ignored
+// Returns error message in english
+
+function GetLastVersion (url, prog: string; var errmsg: string): string;
+var
+  MyHTTPCli: TFPHTTPClient;
+  ProgList: TStringList;
+  i: integer;
+  A: TStringArray;
+begin
+  result:= '';
+  errmsg:= '';
+  ProgList:= TStringList.Create;
+ { SSL initialization has to be done by hand here }
+  InitSSLInterface;
+  MyHTTPCli:= TFPHTTPClient.Create(nil);
+  try
+    MyHTTPCli.IOTimeout:= 5000;
+    MyHTTPCli.AllowRedirect:= true;
+    ProgList.Text:=MyHTTPCli.get(url);
+    if Length(ProgList.Text) > 0 then
+    begin
+      For i:= 0 to ProgList.Count-1 do
+      begin
+        A:= ProgList.Strings[i].split(';');
+        if CompareText (prog, A[0]) = 0 then
+        begin
+          result:= A[1];
+          break;
+        end;
+      end;
+    end;
+  except on e:Exception do
+    errmsg:= (e.message);
+  end;
+  ProgList.Free;
+  MyHTTPCli.Free;
+end;
+
+// Get new version on Github
+// Get latest release page
+// extract version value fromn header title
+
+
+function TAboutBox.ChkNewVersion(url: string; var errmsg: string): string;
+var
+  MyHTTPCli: TFPHTTPClient;
+  spage: string;
+  stagurl: string;
+  titlebeg, titleend: Integer;
+  A: TStringArray;
+begin
+  result:= '';
+  { SSL initialization has to be done by hand here }
+  InitSSLInterface;
+  MyHTTPCli:= TFPHTTPClient.Create(nil);
+  try
+    MyHTTPCli.IOTimeout:= 5000;
+    MyHTTPCli.AllowRedirect:= true;
+    MyHTTPCli.AddHeader('User-Agent','Mozilla 5.0 (bb84000 application)');
+    spage:= MyHTTPCli.Get (url);
+    titlebeg:= Pos('<title>', spage);
+    titleend:= Pos('</title>', spage);
+    stagurl:= Copy(spage, titlebeg+7,titleend-titlebeg-7);
+    // Title format example :
+    // <title>Release Version 0.7.9.8 - 03/11/2020 ...</title>
+    // Split title, version is the third array item
+    A:= stagurl.Split(' ');
+    result:= A[2];
+    MyHTTPCli.Free;
+  except
+    on e:Exception do
+    errmsg:= (e.message);
+  end;
+end;
 
 { TAboutBox }
 
@@ -59,12 +184,32 @@ begin
   SenderName:= UpperCase(Tcomponent(Sender).Name);
   if SenderName= 'LUPDATE' then
   begin
+    if NewVersion then
+    begin
+      OpenDocument('help'+PathDelim+ProgName+'.html');
+      exit;
+    end;
     url:= UrlUpdate;
     LastUpdate:= now();
+    // Set url ='' to use Github update scheme
+    checked:= true;
+    If length(url) > 0 then OpenURL(url) else
+      LastVersion:= ChkNewVersion(ChkVerUrl, url);
+      if VersionToInt(LastVersion)>VersionToInt(Version) then
+      begin
+        LUpdate.Caption:= Format(sUpdateAvailable, [LastVersion]);
+        NewVersion:= true;
+        //OpenDocument('help'+PathDelim+ProgName+'.html');
+      end else
+      begin
+        LUpdate.Caption:= sNoUpdateAvailable;
+      end;
+    end;
+  if SenderName= 'LWEBSITE' then
+  begin
+    url:= UrlWebsite;
+    If length(url) > 0 then OpenURL(url);
   end;
-  if SenderName= 'LWEBSITE' then url:= UrlWebsite;
-  If length(url) > 0 then
-  OpenURL(url);
 end;
 
 
@@ -72,6 +217,10 @@ procedure TAboutBox.FormActivate(Sender: TObject);
 begin
   LWebSite.Caption:= 'Web site: '+UrlWebsite;
 end;
+
+
+
+
 
 // Resize controls when box is resized
 procedure TAboutBox.FormChangeBounds(Sender: TObject);
@@ -89,6 +238,20 @@ begin
   LWebsite.Left:= 0;
   LWebSite.Width:= PnlDesc.Width;
   BtnOk.Left:= (ClientWidth-BtnOK.Width) div 2;
+end;
+
+// Label goes bold when click
+
+procedure TAboutBox.LabelMouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  TLabel(Sender).font.style:= [fsBold];
+end;
+
+procedure TAboutBox.LabelMouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  TLabel(Sender).Font.style:= [];
 end;
 
 end.

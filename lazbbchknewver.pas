@@ -3,20 +3,27 @@
 { bb - sdtp - november 2019                                                     }
 {*******************************************************************************}
 
-unit lazbbChkNewVer;
+unit lazbbchknewver;
 
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-  Classes, SysUtils, dialogs, fphttpclient, fpopenssl, openssl, forms, extctrls, lazbbutils;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, fphttpclient,
+  fpopenssl, openssl, extctrls, StdCtrls, lazbbutils, opensslsockets ;
 
-function VersionToInt (VerStr: String): int64;
-function GetLastVersion (url, prog: string; var errmsg: string): string ;
-function ChkLastVersion (prog: string; var errmsg: string): string;
+
+
+  function VersionToInt (VerStr: String): int64;
+  function GetLastVersion (url, prog: string; var errmsg: string): string ;
+  function ChkLastVersion (url: string; var errmsg: string): string;
+
+
 
 implementation
+
+
 
 // Convert version string (a.b.c.d) to int64
 // "d" is the lower word, "a" is the higher word.
@@ -46,7 +53,6 @@ begin
     end;
   end;
 end;
-
 
 // Retrieve last update form author site.
 // version file is a csv, separator: comma, first field: program name, second field: version (string: 'a.b.c.d')
@@ -93,9 +99,8 @@ end;
 // Get latest release page
 // extract version value fromn header title
 
-function ChkLastVersion(prog: string; var errmsg: string): string;
-const
-  GitUrl = 'https://github.com/bb84000/';
+
+function ChkLastVersion(url: string; var errmsg: string): string;
 var
   MyHTTPCli: TFPHTTPClient;
   spage: string;
@@ -111,10 +116,13 @@ begin
     MyHTTPCli.IOTimeout:= 5000;
     MyHTTPCli.AllowRedirect:= true;
     MyHTTPCli.AddHeader('User-Agent','Mozilla 5.0 (compatible ct)');
-    spage:= MyHTTPCli.Get (GitUrl+prog+'/releases/latest');
+    spage:= MyHTTPCli.Get (url);
     titlebeg:= Pos('<title>', spage);
     titleend:= Pos('</title>', spage);
     stagurl:= Copy(spage, titlebeg+7,titleend-titlebeg-7);
+    // Title format example :
+    // <title>Release Version 0.7.9.8 - 03/11/2020 ...</title>
+    // Split title, version is the third array item
     A:= stagurl.Split(' ');
     result:= A[2];
     MyHTTPCli.Free;
@@ -123,6 +131,9 @@ begin
     errmsg:= (e.message);
   end;
 end;
+
+
+
 
 end.
 

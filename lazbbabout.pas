@@ -2,7 +2,7 @@
 { lazbbabout - About box for author applications                                }
 { Check new versions functions                                                  }
 { bb - sdtp - november 2019                                                     }
-{Can change with to adapt to program                                            }
+{ Can change width to adapt to program                                           }
 {*******************************************************************************}
 unit lazbbabout;
 
@@ -12,7 +12,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  Buttons, lclintf, fphttpclient, fpopenssl, openssl, opensslsockets;
+  Buttons, lclintf, fphttpclient, fpopenssl, openssl, opensslsockets, lazbbutils;
 
 type
 
@@ -37,20 +37,21 @@ type
   private
 
   public
-    ErrorMessage: String;
-    UrlUpdate: String;
-    UrlWebsite: String;
+    ErrorMessage: String;         // Errormessage passed to main app
+    UrlUpdate: String;            // Old version check URL
+    UrlWebsite: String;           //
     LastUpdate: TDateTime;
-    ChkVerUrl: String;
-    Version: String;
-    LastVersion: String;
-    sUpdateAvailable: string;
-    sNoUpdateAvailable: string;
+    ChkVerUrl: String;            // New version check theme (Github)
+    Version: String;              // New version check
+    LastVersion: String;          // New version check
+    sLastUpdateSearch: String;    // New version check
+    sUpdateAvailable: string;     // New version check
+    sNoUpdateAvailable: string;   // New version check
     ProgName: String;
-    Checked, NewVersion: Boolean;
-    function ChkNewVersion (url: string; var errmsg: string): string;
+    Checked, NewVersion: Boolean; // New version check
+    function ChkNewVersion (url: string=''): string;
   end;
-  // Version check functions
+  // Old version check functions
   function VersionToInt (VerStr: String): int64;
   function GetLastVersion (url, prog: string; var errmsg: string): string ;
 
@@ -139,7 +140,7 @@ end;
 // extract version value fromn header title
 
 
-function TAboutBox.ChkNewVersion(url: string; var errmsg: string): string;
+function TAboutBox.ChkNewVersion(url: string=''): string;
 var
   MyHTTPCli: TFPHTTPClient;
   spage: string;
@@ -148,13 +149,14 @@ var
   A: TStringArray;
 begin
   result:= '';
+  if length(url)=0 then url:= ChkVerUrl;
   { SSL initialization has to be done by hand here }
   InitSSLInterface;
   MyHTTPCli:= TFPHTTPClient.Create(nil);
   try
     MyHTTPCli.IOTimeout:= 5000;
     MyHTTPCli.AllowRedirect:= true;
-    MyHTTPCli.AddHeader('User-Agent','Mozilla 5.0 (bb84000 application)');
+    MyHTTPCli.AddHeader('User-Agent','Mozilla 5.0 (bb84000 '+ProgName+')');
     spage:= MyHTTPCli.Get (url);
     titlebeg:= Pos('<title>', spage);
     titleend:= Pos('</title>', spage);
@@ -167,7 +169,7 @@ begin
     MyHTTPCli.Free;
   except
     on e:Exception do
-    errmsg:= (e.message);
+    ErrorMessage:= e.message
   end;
 end;
 
@@ -186,20 +188,21 @@ begin
   begin
     if NewVersion then
     begin
-      OpenDocument('help'+PathDelim+ProgName+'.html');
+      // Link to program binaries is in the help file
+      OpenDocument(HelpFile);
       exit;
     end;
     url:= UrlUpdate;
     LastUpdate:= now();
-    // Set url ='' to use Github update scheme
+    LUpdate.Hint:= sLastUpdateSearch + ': ' + DateToStr(trunc(LastUpdate));
+    // Set url ='' to use Github update scheme instead click go to sdtp version check
     checked:= true;
     If length(url) > 0 then OpenURL(url) else
-      LastVersion:= ChkNewVersion(ChkVerUrl, url);
+      LastVersion:= ChkNewVersion(ChkVerUrl);
       if VersionToInt(LastVersion)>VersionToInt(Version) then
       begin
         LUpdate.Caption:= Format(sUpdateAvailable, [LastVersion]);
         NewVersion:= true;
-        //OpenDocument('help'+PathDelim+ProgName+'.html');
       end else
       begin
         LUpdate.Caption:= sNoUpdateAvailable;

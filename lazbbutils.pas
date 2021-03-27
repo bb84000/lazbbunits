@@ -44,6 +44,8 @@ type
   procedure ImageFitToSize(var img: TImage; imgw, imgh: integer);
   procedure CropBitmap(InBitmap, OutBitMap : TBitmap; Enabled: boolean);//X, Y, W, H :Integer);
   procedure CropBitmap(InBitmap, OutBitMap : TBitmap; index: integer);
+  procedure CropBitmap(InImgList:TImageList; OutBitMap : TBitmap; Enabled: boolean; ListIndex: integer);
+  procedure CropBitmap(InImgList:TImageList; OutBitMap : TBitmap; index, ListIndex: integer);
   procedure ResPngToGlyph(Instance: THandle; ResName: string; glyph: Tbitmap);
   function TranslateHttpErrorMsg(ErrMsg: string; HttpErrMsgs: array of string):string;
   function BoolToString(b: boolean): string;
@@ -58,6 +60,8 @@ type
   function StringDecrypt(S: String; Key: DWord): String;
   function DarkColor(col : TColor) : Boolean;
   procedure Execute(exec: string; param: TStrings);
+  function VersionToInt (VerStr: String): int64;
+
 
   const
   SRCCOPY = $00CC0020;
@@ -351,6 +355,28 @@ var
 begin
  if enabled then index:=0 else index:=1;
  CropBitmap(InBitmap, OutBitMap, index);
+end;
+
+procedure CropBitmap(InImgList:TImageList; OutBitMap : TBitmap; Enabled: boolean; ListIndex: integer);
+var
+  index:Integer;
+begin
+   if enabled then index:=0 else index:=1;
+   CropBitmap(InImgList, OutBitMap, index, ListIndex);
+end;
+
+procedure CropBitmap(InImgList: TImageList; OutBitMap : TBitmap; index, ListIndex: integer);
+var
+  bmp: TBitmap;
+begin
+  bmp:= Tbitmap.Create;
+  try
+  InImgList.GetBitmap(ListIndex, bmp);
+  CropBitmap(bmp, OutBitMap, index);
+  finally
+    bmp.Free
+  end;
+
 end;
 
 // Copy image 0,0, etc
@@ -729,6 +755,35 @@ begin
   result:= AlBox.ShowModal;
   if AlBox.CBNoShowAlert.Checked then result:= result+9;  //mrYestoAll if mrOK and checked
   AlBox.Destroy;
+end;
+
+// Convert version string (a.b.c.d) to int64
+// "d" is the lower word, "a" is the higher word.
+// Equivalent to d+c*65636+b*65636*65636*a*65636*65636*65636
+// returns -1 on error
+
+function  VersionToInt (VerStr: String): int64;
+var
+  A: TStringArray;
+  b: array [0..3] of word;
+  i: integer;
+begin
+  Result:= -1;
+  if length(VerStr) > 0 then
+  begin
+    A:= VerStr.Split('.');
+    try
+      {$IFDEF ENDIAN_LITTLE}
+        for i:= 3 downto 0 do b[i]:= StrToInt(A[3-i]);
+      {$ENDIF}
+      {$IFDEF ENDIAN_BIG}
+         for i:= 0 to 3 do b[i]:= StrToInt(A[i]);
+      {$ENDIF}
+      result:= int64(b);
+    except
+      Result:= -1;
+    end;
+  end;
 end;
 
 end.

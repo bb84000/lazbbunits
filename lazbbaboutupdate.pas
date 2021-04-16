@@ -1,7 +1,7 @@
 {****************************************************************************** }
 { lazbbabout - About box for author applications                                }
 { Check new versions functions                                                  }
-{ bb - sdtp - november 2019                                                     }
+{ bb - sdtp - april 2021                                                     }
 { Can change width to adapt to program                                           }
 {*******************************************************************************}
 unit lazbbaboutupdate;
@@ -86,29 +86,24 @@ begin
   InitSSLInterface;
   MyHTTPCli:= TFPHTTPClient.Create(nil);
   try
-    MyHTTPCli.IOTimeout:= 5000;
+    MyHTTPCli.IOTimeout:= 10000;
     MyHTTPCli.AllowRedirect:= true;
     MyHTTPCli.AddHeader('User-Agent','Mozilla 5.0 (bb84000 '+ProgName+')');
-    //spage:= MyHTTPCli.Get (url);
-    //titlebeg:= Pos('<title>', spage);
-    //titleend:= Pos('</title>', spage);
-    //stagurl:= Copy(spage, titlebeg+7,titleend-titlebeg-7);
-    // Title format example :
-    // <title>Release Version 0.7.9.8 - 03/11/2020 ...</title>
-    // Split title, version is the third array item
-    //A:= stagurl.Split(' ');
     // Parse history.txt to get last version
-    sl.text:= MyHTTPCli.Get (url);
-    for i:= 0 to sl.Count-1 do
+    sl.text:= MyHTTPCli.Get(url);
+    if sl.Count > 0 then
     begin
-      if Pos('Version', sl.Strings[i])=1 then A:= sl.Strings[i].Split(' ');
+      for i:= 0 to sl.Count-1 do
+      begin
+        if Pos('Version', sl.Strings[i])=1 then A:= sl.Strings[i].Split(' ');
+      end;
+      result:= A[1];
     end;
-    result:= A[1];
-    MyHTTPCli.Free;
   except
     on e:Exception do
     ErrorMessage:= e.message
   end;
+  if Assigned(MyHTTPCli) then MyHTTPCli.Free;
   if Assigned(sl) then sl.free;
 end;
 

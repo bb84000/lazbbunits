@@ -50,10 +50,12 @@ type
   function TranslateHttpErrorMsg(ErrMsg: string; HttpErrMsgs: array of string):string;
   function BoolToString(b: boolean): string;
   function StringToBool(s: string): boolean;
+  function StringToInt(s: string): Integer;
   function StringToFloat(s: String; DecSepar: char='.' ): Float;
   function FloatToString(f: Float; DecSepar: char='.'): string;
   function StringToTimeDate(s: string; fmt: string=''): TDateTime;
   function TimeDateToString(datim: TDateTime; fmt: string=''): string;
+  function StringToColour(s: String): TColor;
   function StringToInt(s: String): Int64;
   function FindSeparator(s: string): Char ;
   function StringEncrypt(S: String; Key: DWord): String;
@@ -564,6 +566,15 @@ begin
   if uppercase(s)='TRUE' then result:= true else result:= false;
 end;
 
+function StringToInt(s: string): Integer;
+begin
+  try
+    result:= StrToInt(s);
+  except
+    result:= 0;
+  end;
+end;
+
 // String to float, default decimal separator is dot '.'
 
 function StringToFloat(s: String; DecSepar: char='.' ): Float;
@@ -592,6 +603,14 @@ begin
   end;
 end;
 
+function StringToColour(s: String): TColor;
+begin
+  try
+    result:= StringToColor(s);
+  except
+    result:= clDefault;
+  end;
+end;
 
 // Find separator in date or time format strings
 // As format string conains only letters and separators, if not a letter, it is separator

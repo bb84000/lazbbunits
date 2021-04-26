@@ -1,10 +1,10 @@
 object AboutBox: TAboutBox
   Left = 1006
-  Height = 195
+  Height = 208
   Top = 278
   Width = 350
   BorderStyle = bsDialog
-  ClientHeight = 195
+  ClientHeight = 208
   ClientWidth = 350
   OnActivate = FormActivate
   OnChangeBounds = FormChangeBounds
@@ -13,12 +13,12 @@ object AboutBox: TAboutBox
   LCLVersion = '2.0.12.0'
   object PnlDesc: TPanel
     Left = 7
-    Height = 136
+    Height = 152
     Top = 8
     Width = 336
     BevelInner = bvRaised
     BevelOuter = bvLowered
-    ClientHeight = 136
+    ClientHeight = 152
     ClientWidth = 336
     TabOrder = 0
     object Image1: TImage
@@ -114,7 +114,7 @@ object AboutBox: TAboutBox
     object LSourceCode: TLabel
       Left = 0
       Height = 15
-      Top = 110
+      Top = 130
       Width = 336
       Alignment = taCenter
       AutoSize = False
@@ -135,11 +135,35 @@ object AboutBox: TAboutBox
       OnMouseLeave = LabelMouseLeave
       OnMouseUp = LabelMouseUp
     end
+    object LProgPage: TLabel
+      Left = 0
+      Height = 15
+      Top = 110
+      Width = 336
+      Alignment = taCenter
+      AutoSize = False
+      Caption = 'Program Site'
+      Font.CharSet = ANSI_CHARSET
+      Font.Color = clBlue
+      Font.Height = -12
+      Font.Name = 'Segoe UI'
+      Font.Pitch = fpVariable
+      Font.Quality = fqDraft
+      ParentColor = False
+      ParentFont = False
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = LURLClick
+      OnMouseDown = LabelMouseDown
+      OnMouseEnter = LabelMouseEnter
+      OnMouseLeave = LabelMouseLeave
+      OnMouseUp = LabelMouseUp
+    end
   end
   object BtnOK: TBitBtn
     Left = 144
     Height = 30
-    Top = 152
+    Top = 168
     Width = 75
     Anchors = [akTop]
     Default = True

@@ -27,6 +27,7 @@ type
     LVersion: TLabel;
     LUpdate: TLabel;
     LCopyright: TLabel;
+    LProgPage: TLabel;
     PnlDesc: TPanel;
     procedure FormActivate(Sender: TObject);
     procedure FormChangeBounds(Sender: TObject);
@@ -41,6 +42,7 @@ type
   private
 
   public
+    ErrorNum: Integer;
     ErrorMessage: String;         // Errormessage passed to main app
     UrlWebsite: String;           // Author Web site
     UrlProgSite: String;          // URL of program page with download link
@@ -77,7 +79,8 @@ var
   titlebeg, titleend: Integer;
   A: TStringArray;
   sl: TStringList;
-  i: integer;
+  s: string;
+  i, p: integer;
 begin
   result:= '';
   sl:= TStringList.create();
@@ -89,19 +92,28 @@ begin
     MyHTTPCli.IOTimeout:= 10000;
     MyHTTPCli.AllowRedirect:= true;
     MyHTTPCli.AddHeader('User-Agent','Mozilla 5.0 (bb84000 '+ProgName+')');
-    // Parse history.txt to get last version
+    // Parse last release page to get last version
+    // <title>Release Version 0.9.1.7 - 08/04/2021 etc
     sl.text:= MyHTTPCli.Get(url);
+    Application.ProcessMessages; //let loading complete
     if sl.Count > 0 then
     begin
       for i:= 0 to sl.Count-1 do
       begin
-        if Pos('Version', sl.Strings[i])=1 then A:= sl.Strings[i].Split(' ');
+        p:= pos('<title>', sl.Strings[i]) ;
+        if p > 0 then
+        begin
+          s:=Copy(sl.Strings[i], p+8, 40);
+          A:= s.Split(' ');
+          break;
+        end;
       end;
-      result:= A[1];
+      result:= A[2];
+
     end;
   except
     on e:Exception do
-    ErrorMessage:= e.message
+       ErrorMessage:= e.message
   end;
   if Assigned(MyHTTPCli) then MyHTTPCli.Free;
   if Assigned(sl) then sl.free;
@@ -152,6 +164,11 @@ begin
     url:= UrlSourceCode;
     If length(url) > 0 then OpenURL(url);
   end;
+  if SenderName= 'LPROGPAGE' then
+  begin
+    url:= UrlProgSite;
+    If length(url) > 0 then OpenURL(url);
+  end;
 end;
 
 
@@ -159,9 +176,9 @@ end;
 
 procedure TAboutBox.FormActivate(Sender: TObject);
 begin
-
   //LWebSite.Caption:= 'Web site';
   LWebSite.Hint:= UrlWebsite;
+  LProgPage.Hint:= UrlProgSite;
   if length(UrlSourceCode)=0 then
   begin
     LSourceCode.Caption:= '';
@@ -169,6 +186,7 @@ begin
     LCopyright.Top:= LVersion.Top+25;
     LUpdate.Top:= LCopyright.Top+25;
     LWebsite.Top:= LUpdate.Top+25;
+    LProgPage.Top:= LWebsite.Top+25;
     LSourceCode.visible:= false;
   end else
   begin
@@ -178,7 +196,8 @@ begin
     LCopyright.Top:= LVersion.Top+20;
     LUpdate.Top:= LCopyright.Top+20;
     LWebsite.Top:= LUpdate.Top+20;
-    LSourceCode.Top:= LWebsite.Top+20;
+    LProgPage.Top:= LWebsite.Top+20;
+    LSourceCode.Top:= LProgPage.Top+20;
     LSourceCode.visible:= true;
   end;
 end;

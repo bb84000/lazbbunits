@@ -53,6 +53,7 @@ type
   function StringToInt(s: string): Integer;
   function StringToFloat(s: String; DecSepar: char='.' ): Float;
   function FloatToString(f: Float; DecSepar: char='.'): string;
+  function floatround( f: double; n: integer): double;
   function StringToTimeDate(s: string; fmt: string=''): TDateTime;
   function TimeDateToString(datim: TDateTime; fmt: string=''): string;
   function StringToColour(s: String): TColor;
@@ -610,6 +611,16 @@ begin
   except
     result:= clDefault;
   end;
+end;
+
+function floatround( f: double; n: integer): double;
+var
+  zeros: double;
+begin
+ zeros:= power(10, n);
+ f:= round(f*zeros);
+ f:= f / zeros;
+ result:= f;
 end;
 
 // Find separator in date or time format strings

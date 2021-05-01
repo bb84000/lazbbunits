@@ -108,8 +108,9 @@ begin
           break;
         end;
       end;
-      result:= A[2];
-
+      // Avoid exception if we dont find the proper line
+      if length(A)>=2 then result:= A[2]
+      else result:= '';
     end;
   except
     on e:Exception do

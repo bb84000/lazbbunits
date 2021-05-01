@@ -70,24 +70,19 @@ Function GetPaques(Year: Word): TDateTime;     // Wikipedia
 var
   nMonth, nDay, nMoon, nEpact, nSunday, nGold, nCent, nCorx, nCorz: Integer;
 begin
-  { The Golden Number of the year in the 19 year Metonic Cycle: }
-  nGold := (Year mod 19) + 1;
-  { Calculate the Century: }
-  nCent := (Year div 100) + 1;
+  nGold := (Year mod 19) + 1;    // The Golden Number of the year in the 19 year Metonic Cycle
+  nCent := (Year div 100) + 1;   // Calculate the Century
   { Number of years in which leap year was dropped in order... }
   { to keep in step with the sun: }
   nCorx := (3 * nCent) div 4 - 12;
-  { Special correction to syncronize Easter with moon's orbit: }
-  nCorz := (8 * nCent + 5) div 25 - 5;
-  { Find Sunday: }
-  nSunday := (Longint(5) * Year) div 4 - nCorx - 10;
+  nCorz := (8 * nCent + 5) div 25 - 5; // Special correction to syncronize Easter with moon's orbit
+  nSunday := (Longint(5) * Year) div 4 - nCorx - 10;  // Find Sunday
   { ^ To prevent overflow at year 6554}
   { Set Epact - specifies occurrence of full moon: }
   nEpact := (11 * nGold + 20 + nCorz - nCorx) mod 30;
   if nEpact < 0 then
     nEpact := nEpact + 30;
-  if ((nEpact = 25) and (nGold > 11)) or (nEpact = 24) then
-    nEpact := nEpact + 1;
+  if ((nEpact = 25) and (nGold > 11)) or (nEpact = 24) then nEpact := nEpact + 1;
   { Find Full Moon: }
   nMoon := 44 - nEpact;
   if nMoon < 21 then
@@ -104,7 +99,11 @@ begin
     nMonth := 3;
     nDay   := nMoon;
   end;
-  result := EncodeDate(Year, nMonth, nDay);
+  try
+    result := EncodeDate(Year, nMonth, nDay);
+  except
+    result:= 0;
+  end;
 end;
 
 function Get_MoonDays(gDate: TDateTime): TMoonDays;

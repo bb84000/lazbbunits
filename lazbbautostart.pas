@@ -34,6 +34,8 @@ var
   {$ENDIF}
   {$IFDEF Linux}
     HomeDir: string;
+    StrDskFile: TStringList;
+    Icon: String;
   {$ENDIF}
 begin
   Result:= true;
@@ -49,7 +51,7 @@ begin
       StrDskFile.Add('Name='+progname);
       StrDskFile.Add('Comment=Contacts manager');
       StrDskFile.Add('Exec='+exename);
-      Icon=HomeDir+'.config/autostart/'+progname+'.png';
+      Icon:=HomeDir+'.config/autostart/'+progname+'.png';
       StrDskFile.Add('Terminal=false');
       StrDskFile.SaveToFile(HomeDir+'.config/autostart/'+progname+'.desktop');
       // Important ! Give the file all permissions

@@ -389,6 +389,7 @@ procedure TOSVersion.localize(lang:string; LangFile: TBbInifile);
 var
   i: integer;
 begin
+  {$IFDEF WINDOWS}
   // populate dynamic arrays for product details and versions with default values
   SetLength(ProdStr, Length(ProductStr));
   for i:= 0 to high(ProdStr) do ProdStr[i]:= ProductStr[i];
@@ -401,12 +402,15 @@ begin
     for i:= 0 to high(Win10Build) do Win10Build[i,1]:= LangFile.ReadString(lang,Windows10Build[i,0],Windows10Build[1,1]);
   except
   end;
+  {$ENDIF}
 end;
 
 destructor TOSVersion.Destroy;
 begin
   inherited;
+  {$IFDEF WINDOWS}
   if Assigned(GetProductInfo) then  FreeAndNil(GetProductInfo);
+  {$ENDIF}
 end;
 
 
@@ -651,7 +655,6 @@ end;
 {$ELSE}
   procedure TOSVersion.GetSysInfo;
   var
-    OSInfo: TOSInfo;
     P: TProcess;
     Function ExecParam(Param: String): String;
         Begin

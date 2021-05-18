@@ -25,6 +25,8 @@ type
 
   TMoonDays = array[1..56] of TMoonRecord;
 
+  TypSunRise = (standard, civil, nautic, astro, none);
+
 var
   MoonDays: TMoonDays;
 
@@ -38,19 +40,30 @@ const
   function Get_MoonDays(gDate: TDateTime): TMoonDays; // retourne dates lune sur 52 sem
   function isMoon(gDate: TDateTime): Boolean;         // retourne vrai si NL,PQ,PL,DQ
   function Get_MoonType(gDate: TDateTime): string;    // retourne NL,PQ,PL,DQ
+  // Seasons function
   function GetSeasonDate(year: word; Num: Integer): TDateTime;
+  // Get the 1st of a month
   function GetBegMonth(dDate: TDateTime): word;
+  // French special days
   Function GetDeportes(Year: Word): TDateTime;
   function GetFetMeres (Year: Word): TDateTime;
+  // DST
   function IsDST (dDate: TDateTime): Boolean;
-  function Sunrise(dt: TDateTime; latitude, longitude: double): TDateTime;
-  function Sunset(dt: TDateTime; latitude, longitude: double): TDateTime;
+  // Sunrise and sunset time
+  // dt: Date for sunrise and sunset
+  // latitude and longitude (West negative)
+  // Type sun standard, civil, nautic, astro (default: standard)
+  function Sunrise(dt: TDateTime; latitude, longitude: double; TypeSun: TypSunRise=standard): TDateTime;
+  function Sunset(dt: TDateTime; latitude, longitude: double; TypeSun: TypSunRise=standard): TDateTime;
 
 
 implementation
 
+const
+  aSunTypDeg: array [0..4] of Double = (90.83333, 96, 102, 108, 90);
+
 function Periodic24(t: Extended ): Extended; forward;
-function calcSunrise(dt: TDateTime; latitude, longitude: double; rise: Boolean): TDateTime; forward;
+function calcSunrise(dt: TDateTime; latitude, longitude: double; rise: Boolean; TypeSun: TypSunRise=standard): TDateTime; forward;
 function calcTimeJulianCent(jd: double): double; forward;
 function calcJDFromJulianCent(t: double): double; forward;
 function calcEquationOfTime(t: double): double; forward;
@@ -63,7 +76,7 @@ function calcSunDeclination(t: double): double; forward;
 function calcSunApparentLong(t: double): double; forward;
 function calcSunTrueLong(t: double): double; forward;
 function calcSunEqOfCenter(t: double): double; forward;
-function calcHourAngleSunrise(lat, solarDec: double): double; forward;
+function calcHourAngleSunrise(lat, solarDec: double; TypeSun: TypSunRise=standard): double; forward;
 function calcSolNoonUTC(t, longitude: double): double; forward;
 
 Function GetPaques(Year: Word): TDateTime;     // Wikipedia
@@ -505,14 +518,14 @@ end;
 // Return value: time
 //***********************************************************************/
 
-function Sunrise(dt: TDateTime; latitude, longitude: double): TDateTime;
+function Sunrise(dt: TDateTime; latitude, longitude: double; TypeSun: TypSunRise=standard): TDateTime;
 begin
-  Result:= calcSunrise(dt, latitude, longitude, True);
+  Result:= calcSunrise(dt, latitude, longitude, True, TypeSun);
 end;
 
-function Sunset(dt: TDateTime; latitude, longitude: double): TDateTime;
+function Sunset(dt: TDateTime; latitude, longitude: double; TypeSun: TypSunRise=standard): TDateTime;
 begin
-  Result:= calcSunrise(dt, latitude, longitude, False);
+  Result:= calcSunrise(dt, latitude, longitude, False, TypeSun);
 end;
 
 //***********************************************************************/
@@ -524,7 +537,7 @@ end;
 // Return value: time
 //***********************************************************************/
 
-function calcSunrise(dt: TDateTime; latitude, longitude: double; rise: Boolean): TDateTime;
+function calcSunrise(dt: TDateTime; latitude, longitude: double; rise: Boolean; TypeSun: TypSunRise=standard): TDateTime;
 var
   r: integer;
   JD, t: double;
@@ -546,7 +559,7 @@ begin
   // *** First pass to approximate sunrise or sunset (using solar noon)
   eqTime:= calcEquationOfTime(tnoon);
   solarDec:= calcSunDeclination(tnoon);
-  hourAngle:= calcHourAngleSunrise(latitude, solarDec)*r;
+  hourAngle:= calcHourAngleSunrise(latitude, solarDec, TypeSun)*r;
   delta:= longitude - radToDeg(hourAngle);
   timeDiff:= 4 * delta;	// in minutes of time
   timeUTC:= 720 + timeDiff - eqTime;	// in minutes
@@ -554,7 +567,7 @@ begin
   newt:= calcTimeJulianCent(calcJDFromJulianCent(t) + timeUTC/1440.0);
   eqTime:= calcEquationOfTime(newt);
   solarDec:= calcSunDeclination(newt);
-  hourAngle:= calcHourAngleSunrise(latitude, solarDec)*r;
+  hourAngle:= calcHourAngleSunrise(latitude, solarDec, TypeSun)*r;
   delta:= longitude - radToDeg(hourAngle);
   timeDiff:= 4 * delta;
   timeUTC:= 720 + timeDiff - eqTime; // in minutes
@@ -836,24 +849,28 @@ end;
 
 //***********************************************************************/
 //* Name:    calcHourAngleSunrise
-//* Type:    Function
 //* Purpose: calculate the hour angle of the sun at sunrise for the latitude
 //* Arguments:
 //*   lat : latitude of observer in degrees
-//*	solarDec : declination angle of sun in degrees
+//*   solarDec : declination angle of sun in degrees
+//*   TypSun : standard, civil, nautic, astro (values are in aSunTypDeg array)
 //* Return value:
 //*   hour angle of sunrise in radians
 //***********************************************************************/
 
-function calcHourAngleSunrise(lat, solarDec: double): double;
+function calcHourAngleSunrise(lat, solarDec: double; TypeSun: TypSunRise=standard): double;
 var
   latRad, sdRad, HA: double;
+  ZenithDistance: Double;
 begin
-  // Todo change zenith angle
+  try
+    ZenithDistance:= aSunTypDeg[Ord(TypeSun)];
+  except
+    ZenithDistance:= 90.83333;
+  end;
   latRad:= degToRad(lat);
   sdRad:= degToRad(solarDec);
-  //HAarg:= (cos(degToRad(90.833))/(cos(latRad)*cos(sdRad))-tan(latRad) * tan(sdRad));
-  HA:= (arccos(cos(degToRad(90.833))/(cos(latRad)*cos(sdRad))-tan(latRad) * tan(sdRad)));
+  HA:= (arccos(cos(degToRad(ZenithDistance))/(cos(latRad)*cos(sdRad))-tan(latRad) * tan(sdRad)));
   Result:= HA;		// in radians
 end;
 

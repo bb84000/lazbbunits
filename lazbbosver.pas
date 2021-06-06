@@ -1,7 +1,7 @@
 {******************************************************************************}
 { lazbbosver - Returns OS version information (Windows, Linux and Mac          }
 { Replacement for lazbbosversion unit, uses class instead record               }
-{ sdtp - bb - november 2020                                                    }
+{ sdtp - bb - may 2021                                                    }
 { Localization data in lazbbosver.lng to copy in application .lng file         }
 {******************************************************************************}
 unit lazbbosver;
@@ -330,7 +330,7 @@ const
                                               ('18363', 'v 1909 "November 2019 update"'),
                                               ('19041', 'v 2004 "May 2020 update"'),
                                               ('19042', 'v 20H2 "October 2020 update"'),
-                                              ('20241', 'v 21H1 "Spring 2021 updsate"'));
+                                              ('19043', 'v 21H1 "May 2021 updsate"'));
 
 
     var
@@ -399,7 +399,7 @@ begin
   if assigned (Langfile) then
   try
     for i:= 1 to high(ProdStr) do ProdStr[i]:= LangFile.ReadString(lang,ProductStr[i],ProductStr[i]);
-    for i:= 0 to high(Win10Build) do Win10Build[i,1]:= LangFile.ReadString(lang,Windows10Build[i,0],Windows10Build[1,1]);
+    for i:= 0 to high(Win10Build) do Win10Build[i,1]:= LangFile.ReadString(lang,Windows10Build[i,0],Windows10Build[i,1]);
   except
   end;
   {$ENDIF}
@@ -626,7 +626,7 @@ begin
                             // Build numbers are in Win10build array
                             // The array can be updated from the calling application
                             FVersup:= Win10Build[0, 1]; //'Unknown version';
-                            for i:= 0 to length(Win10build) do
+                            for i:= 0 to length(Win10build)-1 do
                               if FVerBuild=StringToInt(Win10build[i,0]) then
                               begin
                                 FVersup:= Win10Build[i, 1];

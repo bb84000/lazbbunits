@@ -89,7 +89,7 @@ begin
   InitSSLInterface;
   MyHTTPCli:= TFPHTTPClient.Create(nil);
   try
-    MyHTTPCli.IOTimeout:= 10000;
+    MyHTTPCli.IOTimeout:= 20000;
     MyHTTPCli.AllowRedirect:= true;
     MyHTTPCli.AddHeader('User-Agent','Mozilla 5.0 (bb84000 '+ProgName+')');
     // Parse last release page to get last version
@@ -220,6 +220,8 @@ begin
   LUpdate.Width:= PnlDesc.Width;
   LCopyright.left:= 0;
   LCopyright.Width:= PnlDesc.Width;
+  LProgPage.Left:= 0;
+  LProgPage.Width:= PnlDesc.Width;
   LWebsite.Left:= 0;
   LWebSite.Width:= PnlDesc.Width;
   LSourceCode.Width:= PnlDesc.Width;

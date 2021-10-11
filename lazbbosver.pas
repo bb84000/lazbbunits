@@ -140,6 +140,8 @@ const
                                     'Microsoft Windows 10',
                                     'Windows Server 2016',
                                     'Windows Server 2019',
+                                    'Microsoft Windows 11',
+                                    'Windows Server 2022',
                                     'Système inconnu');
 
 
@@ -318,7 +320,7 @@ const
                                          'Professional',
                                          'Server');
     // First element: build number, second element: english, third element: french
-    Windows10Build: array [0..12,0..1] of String =(('00000',    'Unknown version'),
+    Windows10Build: array [0..14,0..1] of String =(('00000',    'Unknown version'),
                                               ('10240', 'v 1507 "July 2015 update"'),
                                               ('10586', 'v 1511 "November 2015 update"'),
                                               ('14393', 'v 1607 "July 2016 (Anniversary update)"'),
@@ -330,7 +332,9 @@ const
                                               ('18363', 'v 1909 "November 2019 update"'),
                                               ('19041', 'v 2004 "May 2020 update"'),
                                               ('19042', 'v 20H2 "October 2020 update"'),
-                                              ('19043', 'v 21H1 "May 2021 updsate"'));
+                                              ('19043', 'v 21H1 "May 2021 update"'),
+                                              ('19044', 'v 21H2 "October 2021 update'),
+                                              ('22000', 'v 21H2 "October 2021 Initial version'));
 
 
     var
@@ -613,12 +617,16 @@ begin
                              fVerProEx );
                   if fVerProEx = $ABCDABCD then fVerProEx:= High(ProdStrEx);
                 end;
-                case fVerMin of       // Windows 10
+                case fVerMin of       // Windows 10  and Windows 11
                    0: begin
                         case fProdTyp of
                           VER_NT_WORKSTATION:
                           begin
-                            fVerTyp:= 19;    // Windows 10
+                            // Windows 11 build number start with 22000
+                            // Windows 10 build number start with 10000
+                            if FVerBuild < 22000 then fVerTyp:= 19      // Windows 10
+                            else fVerTyp:= 22  ;                        // Windows 11
+
                             if (fVerMask and VER_SUITE_PERSONAL) = VER_SUITE_PERSONAL
                             then fVerPro:= 1     //Home Edition
                             else fVerPro:= 2;     //Professional
@@ -639,7 +647,8 @@ begin
                               fVerTyp:= 20; // Windows Server 2016
                             end else
                             begin
-                              fVerTyp:= 21; // Windows Server 2019
+                              if fVerbuild < 20348 then fVerTyp:= 21 // Windows Server 2019
+                              else fVerTyp:= 23;                     // Windows server 2022
                             end;
                           end;
                         end;

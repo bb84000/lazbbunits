@@ -1,7 +1,7 @@
 {******************************************************************************}
 { lazbbosver - Returns OS version information (Windows, Linux and Mac          }
 { Replacement for lazbbosversion unit, uses class instead record               }
-{ sdtp - bb - may 2021                                                    }
+{ sdtp - bb - october 2021                                                    }
 { Localization data in lazbbosver.lng to copy in application .lng file         }
 {******************************************************************************}
 unit lazbbosver;
@@ -333,7 +333,7 @@ const
                                               ('19041', 'v 2004 "May 2020 update"'),
                                               ('19042', 'v 20H2 "October 2020 update"'),
                                               ('19043', 'v 21H1 "May 2021 update"'),
-                                              ('19044', 'v 21H2 "October 2021 update'),
+                                              ('19044', 'v 21H2 "November 2021 update'),
                                               ('22000', 'v 21H2 "October 2021 Initial version'));
 
 

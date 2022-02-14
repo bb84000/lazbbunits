@@ -1,7 +1,7 @@
 {******************************************************************************}
 { lazbbosver - Returns OS version information (Windows, Linux and Mac          }
 { Replacement for lazbbosversion unit, uses class instead record               }
-{ sdtp - bb - october 2021                                                    }
+{ sdtp - bb - february 2022                                                    }
 { Localization data in lazbbosver.lng to copy in application .lng file         }
 {******************************************************************************}
 unit lazbbosver;
@@ -19,7 +19,7 @@ uses
   Classes, SysUtils, lazbbutils, lazbbinifiles;
 
 Type
-
+  // OS Version class
   TOSVersion = class
   private
     fOSName: string;
@@ -44,7 +44,7 @@ Type
     fNetworkNode: string;
     ProdStr: array of String;
     Win10Build: array of array of String;
-     procedure localize(lang: string; LangFile: TBbInifile);
+    Win11Build: array of array of String;
   public
     constructor Create (lang: string='en'; LangFile: TBbInifile=nil); overload;
     destructor Destroy; override;
@@ -52,6 +52,7 @@ Type
     {$IFDEF WINDOWS}
       procedure GetNT32Info;
     {$ENDIF}
+    procedure localize(lang: string; LangFile: TBbInifile);
     property OSName: string read FOSName;
     property Architecture: string read fArchitecture;
     property KernelName: string read FKernelName;
@@ -69,42 +70,42 @@ Type
   end;
 
   {$IFDEF WINDOWS}
-  POSVersionInfoExA = ^TOSVersionInfoExA;
-  POSVersionInfoExW = ^TOSVersionInfoExW;
-  POSVersionInfoEx = POSVersionInfoExA;
-  _OSVERSIONINFOEXA = record
-    dwOSVersionInfoSize: DWORD;
-    dwMajorVersion: DWORD;
-    dwMinorVersion: DWORD;
-    dwBuildNumber: DWORD;
-    dwPlatformId: DWORD;
-    szCSDVersion: array[0..127] of AnsiChar; { Maintenance string for PSS usage }
-    wServicePackMajor: Word;
-    wServicePackMinor: Word;
-    wSuiteMask: WORD;
-    wProductType: BYTE;
+    POSVersionInfoExA = ^TOSVersionInfoExA;
+    POSVersionInfoExW = ^TOSVersionInfoExW;
+    POSVersionInfoEx = POSVersionInfoExA;
+    _OSVERSIONINFOEXA = record
+      dwOSVersionInfoSize: DWORD;
+      dwMajorVersion: DWORD;
+      dwMinorVersion: DWORD;
+      dwBuildNumber: DWORD;
+      dwPlatformId: DWORD;
+      szCSDVersion: array[0..127] of AnsiChar; { Maintenance string for PSS usage }
+      wServicePackMajor: Word;
+      wServicePackMinor: Word;
+      wSuiteMask: WORD;
+      wProductType: BYTE;
     wReserved: BYTE;
-  end;
-  _OSVERSIONINFOEXW = record
-    dwOSVersionInfoSize: DWORD;
-    dwMajorVersion: DWORD;
-    dwMinorVersion: DWORD;
-    dwBuildNumber: DWORD;
-    dwPlatformId: DWORD;
-    szCSDVersion: array[0..127] of WideChar; { Maintenance string for PSS usage }
-    wServicePackMajor: Word;
-    wServicePackMinor: Word;
-    wSuiteMask: WORD;
-    wProductType: BYTE;
-    wReserved: BYTE;
-  end;
-  _OSVERSIONINFOEX = _OSVERSIONINFOEXA;
-  TOSVersionInfoExA = _OSVERSIONINFOEXA;
-  TOSVersionInfoExW = _OSVERSIONINFOEXW;
-  TOSVersionInfoEx = TOSVersionInfoExA;
-  OSVERSIONINFOEXA = _OSVERSIONINFOEXA;
-  OSVERSIONINFOEXW = _OSVERSIONINFOEXW;
-  OSVERSIONINFOEX = OSVERSIONINFOEXA;
+    end;
+    _OSVERSIONINFOEXW = record
+      dwOSVersionInfoSize: DWORD;
+      dwMajorVersion: DWORD;
+      dwMinorVersion: DWORD;
+      dwBuildNumber: DWORD;
+      dwPlatformId: DWORD;
+      szCSDVersion: array[0..127] of WideChar; { Maintenance string for PSS usage }
+      wServicePackMajor: Word;
+      wServicePackMinor: Word;
+      wSuiteMask: WORD;
+      wProductType: BYTE;
+      wReserved: BYTE;
+    end;
+    _OSVERSIONINFOEX = _OSVERSIONINFOEXA;
+     TOSVersionInfoExA = _OSVERSIONINFOEXA;
+    TOSVersionInfoExW = _OSVERSIONINFOEXW;
+    TOSVersionInfoEx = TOSVersionInfoExA;
+    OSVERSIONINFOEXA = _OSVERSIONINFOEXA;
+    OSVERSIONINFOEXW = _OSVERSIONINFOEXW;
+    OSVERSIONINFOEX = OSVERSIONINFOEXA;
 
 const
     VER_NT_WORKSTATION       = 1;
@@ -119,36 +120,33 @@ const
     VER_SUITE_PERSONAL                 = $0200;
 
     StatStr: array of String = ('Microsoft Windows 32',
-                                    'Microsoft Windows 95',
-                                    'Microsoft Windows 95-OSR2',
-                                    'Microsoft Windows 98',
-                                    'Microsoft Windows 98 SE',
-                                    'Microsoft Windows ME',
-                                    'Microsoft Windows NT 3.5',
-                                    'Microsoft Windows NT 4',
-                                    'Microsoft Windows 2000',
-                                    'Microsoft Windows XP',
-                                    'Microsoft Windows Server 2003',
-                                    'Microsoft Windows Vista',
-                                    'Microsoft Windows Server 2008',
-                                    'Microsoft Windows Server 2008 R2',
-                                    'Microsoft Windows 7',
-                                    'Microsoft Windows 8',
-                                    'Microsoft Windows Server 2012',
-                                    'Microsoft Windows 8.1',
-                                    'Windows Server 2012 R2',
-                                    'Microsoft Windows 10',
-                                    'Windows Server 2016',
-                                    'Windows Server 2019',
-                                    'Microsoft Windows 11',
-                                    'Windows Server 2022',
-                                    'Système inconnu');
+                                'Microsoft Windows 95',
+                                'Microsoft Windows 95-OSR2',
+                                'Microsoft Windows 98',
+                                'Microsoft Windows 98 SE',
+                                'Microsoft Windows ME',
+                                'Microsoft Windows NT 3.5',
+                                'Microsoft Windows NT 4',
+                                'Microsoft Windows 2000',
+                                'Microsoft Windows XP',
+                                'Microsoft Windows Server 2003',
+                                'Microsoft Windows Vista',
+                                'Microsoft Windows Server 2008',
+                                'Microsoft Windows Server 2008 R2',
+                                'Microsoft Windows 7',
+                                'Microsoft Windows 8',
+                                'Microsoft Windows Server 2012',
+                                'Microsoft Windows 8.1',
+                                'Windows Server 2012 R2',
+                                'Microsoft Windows 10',
+                                'Windows Server 2016',
+                                'Windows Server 2019',
+                                'Microsoft Windows 11',
+                                'Windows Server 2022',
+                                'Système inconnu');
 
-
-
-
-      // Valeurs en hexa pour info
-   ProdStrEx: array [0..$A3] of String =('Unknown product',                                     //00
+    // Valeurs en hexa pour info
+    ProdStrEx: array [0..$A3] of String =('Unknown product',                                     //00
                                          'Ultimate Edition',                                    //01
                                          'Home Basic Edition',                                  //02
                                          'Home Premium Edition',                                //03
@@ -312,15 +310,13 @@ const
                                          'Pro for Workstations',                                  //A1
                                          'Windows 10 Pro for Workstations',                       //A2
                                          'Unknown');                                              //A3
-
-
-
     ProductStr: array [0..3] of String =   ('',
                                          'Home',
                                          'Professional',
                                          'Server');
     // First element: build number, second element: english, third element: french
-    Windows10Build: array [0..14,0..1] of String =(('00000',    'Unknown version'),
+    //Windows10Build: array [0..14,0..1] of String
+    Windows10Build: array of array [0..1] of String =(('00000',    'Unknown version'),
                                               ('10240', 'v 1507 "July 2015 update"'),
                                               ('10586', 'v 1511 "November 2015 update"'),
                                               ('14393', 'v 1607 "July 2016 (Anniversary update)"'),
@@ -336,6 +332,8 @@ const
                                               ('19044', 'v 21H2 "November 2021 update'),
                                               ('22000', 'v 21H2 "October 2021 Initial version'));
 
+    Windows11Build: array of array [0..1] of String = (('00000',    'Unknown version'),
+                                              ('22000', 'v 21H2 "October 2021 Initial version'));
 
     var
     fVerProEx: DWORD;
@@ -344,10 +342,6 @@ const
     GetProductInfo: function (dwOSMajorVersion, dwOSMinorVersion,
                             dwSpMajorVersion, dwSpMinorVersion: DWORD;
                             var pdwReturnedProductType: DWORD): BOOL stdcall = NIL;
-
-
-
-
      {$ENDIF}
 
 implementation
@@ -359,6 +353,8 @@ implementation
 // Default language english
 
 constructor TOSVersion.Create (lang: string='en'; LangFile: TBbInifile=nil);
+var
+ i: Integer;
 begin
   inherited Create;
   // Initialize variables
@@ -379,6 +375,17 @@ begin
   {$IFDEF WINDOWS}
     Pointer(GetProductInfo) := GetProcAddress(GetModuleHandle('KERNEL32.DLL'),
                                     'GetProductInfo');
+    // populate dynamic arrays for product details and versions with default values
+    SetLength(ProdStr, Length(ProductStr));
+    for i:= 0 to high(ProdStr) do ProdStr[i]:= ProductStr[i];
+    SetLength(Win10Build, length(Windows10Build), length(Windows10Build[0]));
+    SetLength(Win11Build, length(Windows11Build), length(Windows11Build[0]));
+    // Windows 10
+    for i:= 0 to high(Win10Build) do Win10Build[i,0]:= Windows10Build[i,0];
+    for i:= 0 to high(Win10Build) do Win10Build[i,1]:= Windows10Build[i,1];
+    // Windows 11
+    for i:= 0 to high(Win11Build) do Win11Build[i,0]:= Windows11Build[i,0];
+    for i:= 0 to high(Win11Build) do Win11Build[i,1]:= Windows11Build[i,1];
     localize(lang, LangFile);
   {$ENDIF}
 
@@ -388,24 +395,18 @@ end;
 // Windows 10 strings localization  in lazbbosver.lng
 // Copy the content in the application localization file: lngfile
 
-
 procedure TOSVersion.localize(lang:string; LangFile: TBbInifile);
 var
   i: integer;
 begin
   {$IFDEF WINDOWS}
-  // populate dynamic arrays for product details and versions with default values
-  SetLength(ProdStr, Length(ProductStr));
-  for i:= 0 to high(ProdStr) do ProdStr[i]:= ProductStr[i];
-  SetLength(Win10Build, length(Windows10Build), length(Windows10Build[0]));
-  for i:= 0 to high(Win10Build) do Win10Build[i,0]:= Windows10Build[i,0];
-  for i:= 0 to high(Win10Build) do Win10Build[i,1]:= Windows10Build[i,1];
-  if assigned (Langfile) then
-  try
-    for i:= 1 to high(ProdStr) do ProdStr[i]:= LangFile.ReadString(lang,ProductStr[i],ProductStr[i]);
-    for i:= 0 to high(Win10Build) do Win10Build[i,1]:= LangFile.ReadString(lang,Windows10Build[i,0],Windows10Build[i,1]);
-  except
-  end;
+    if assigned (Langfile) then
+    try
+      for i:= 1 to high(ProdStr) do ProdStr[i]:= LangFile.ReadString(lang,ProductStr[i],ProductStr[i]);
+      for i:= 0 to high(Win10Build) do Win10Build[i,1]:= LangFile.ReadString(lang,Windows10Build[i,0],Windows10Build[i,1]);
+      for i:= 0 to high(Win11Build) do Win11Build[i,1]:= LangFile.ReadString(lang,Windows11Build[i,0],Windows11Build[i,1]);
+    except
+    end;
   {$ENDIF}
 end;
 
@@ -413,7 +414,10 @@ destructor TOSVersion.Destroy;
 begin
   inherited;
   {$IFDEF WINDOWS}
-  if Assigned(GetProductInfo) then  FreeAndNil(GetProductInfo);
+    try
+     if Assigned(GetProductInfo) then  FreeAndNil(GetProductInfo);
+    except
+    end;
   {$ENDIF}
 end;
 
@@ -505,7 +509,6 @@ begin
   if IsWin64 then
   fArchitecture:= 'x86_64' else
   fArchitecture:= 'x86';
-
   fVerDetail:= fOSName+' '+fVerProd+' - '+IntToStr(fVerMaj)+'.'+IntToStr(fVerMin)
                  +'.'+IntToStr(fVerBuild)+' - '+fVerSup+' - '+fArchitecture;
 end;
@@ -521,141 +524,105 @@ begin
   dwSpMajorVersion:= 0;
   dwSpMinorVersion:= 0;
   case fVerMaj of
-            3: fVerTyp:= 6;  //NT 3.5
-            4: fVerTyp:= 7;  //NT 4
-            5: begin
-                 case fVerMin of
-                   0: begin
-                        fVerTyp:= 8; // W2000
-                        case fProdTyp of
-                          VER_NT_WORKSTATION: fVerPro:= 2;    // Professional
-                          else fVerPro:= 3;    // Server
-                        end;
+    3: fVerTyp:= 6;  //NT 3.5
+    4: fVerTyp:= 7;  //NT 4
+    5: case fVerMin of
+         0: begin
+              fVerTyp:= 8; // W2000
+              if fProdTyp=VER_NT_WORKSTATION then fVerPro:= 2  // Professional
+              else fVerPro:= 3;                                // Server
+            end;
+         1: begin
+              fVerTyp:= 9; // Windows XP
+              if (fVerMask and VER_SUITE_PERSONAL) = VER_SUITE_PERSONAL then fVerPro:= 1     //Home Edition
+              else fVerPro:= 2;     //Professional
+            end;
+         2: fVerTyp:= 10; // Windows Server 2003
+       end;
+    6: begin
+         if Assigned(GetProductInfo) then
+         begin
+           GetProductInfo( dwOSMajorVersion, dwOSMinorVersion,
+                           dwSpMajorVersion, dwSpMinorVersion, fVerProEx );
+           if fVerProEx = $ABCDABCD then fVerProEx:= High(ProdStrEx);
+         end;
+         case fVerMin of
+           0: if fProdTyp= VER_NT_WORKSTATION then  // Windows Vista
+              begin
+                fVerTyp:= 11;                                                            // Windows Vista
+                if (fVerMask and VER_SUITE_PERSONAL)=VER_SUITE_PERSONAL then fVerPro:= 1 //Home Edition
+                else fVerPro:= 2;                                                        //Professional
+              end else  fVerTyp:= 12;                                                    // Windows Server 2008
+           1: if fProdTyp=VER_NT_WORKSTATION then
+              begin
+                fVerTyp:= 14;                                                            // Windows 7
+                if (fVerMask and VER_SUITE_PERSONAL)=VER_SUITE_PERSONAL then fVerPro:= 1 //Home Edition
+                else fVerPro:= 2;                                                        //Professional
+              end else fVerTyp:= 13;                                                     // Windows Server 2008 RC2
+           2: if fProdTyp =VER_NT_WORKSTATION then
+              begin
+                fVerTyp:= 15;                                                            // Windows 8
+                if (fVerMask and VER_SUITE_PERSONAL)=VER_SUITE_PERSONAL then fVerPro:= 1 //Home Edition
+                else fVerPro:= 2;                                                        //Professional
+              end else fVerTyp:= 16;                                                     // Windows Server 2012
+           3: if fProdTyp= VER_NT_WORKSTATION then
+              begin
+                fVerTyp:= 17;                                                            // Windows 8.1
+                if (fVerMask and VER_SUITE_PERSONAL)=VER_SUITE_PERSONAL then fVerPro:= 1 //Home Edition
+                else fVerPro:= 2;                                                        //Professional
+              end else fVerTyp:= 18;                                                     // Windows 2012 Server R2
+         end;     //case fVermin
+       end;
+    10: begin
+          if Assigned(GetProductInfo) then
+          begin
+            GetProductInfo( dwOSMajorVersion, dwOSMinorVersion,
+                             dwSpMajorVersion, dwSpMinorVersion, fVerProEx );
+            if fVerProEx = $ABCDABCD then fVerProEx:= High(ProdStrEx);
+          end;
+          case fVerMin of                                     // Windows 10 , Windows 11
+             0: if fProdTyp=VER_NT_WORKSTATION then
+                begin
+                  if (fVerMask and VER_SUITE_PERSONAL)=VER_SUITE_PERSONAL then fVerPro:= 1  //Home Edition
+                  else fVerPro:= 2;                                                         //Professional
+                  if FVerBuild < 22000 then
+                  begin
+                    fVerTyp:= 19;      // Windows 10 build number start with 10000
+                    // Match builds to Win 10 version commercial name, Build numbers are in Win10build array
+                    FVersup:= Win10Build[0, 1]; //'Unknown version';
+                    for i:= 0 to high(Win10build) do
+                      if FVerBuild=StringToInt(Win10build[i,0]) then
+                      try
+                        FVersup:= Win10Build[i, 1];
+                        break;
+                      except
                       end;
-                   1: begin
-                        fVerTyp:= 9; // Windows XP
-                        if (fVerMask and VER_SUITE_PERSONAL) = VER_SUITE_PERSONAL then
-                          fVerPro:= 1     //Home Edition
-                        else
-                          fVerPro:= 2;     //Professional
+                  end else
+                  begin
+                    fVerTyp:= 22  ;  // Windows 11 build number start with 22000
+                    FVersup:= Win11Build[0, 1]; //'Unknown version';
+                    for i:= 0 to high(Win11build) do
+                      if FVerBuild=StringToInt(Win11build[i,0]) then
+                      try
+                        FVersup:= Win11Build[i, 1];
+                        break;
+                      except
                       end;
-                   2: fVerTyp:= 10; // Windows Server 2003
-                 end;
-               end;
-            6: begin
-                 if Assigned(GetProductInfo) then
-                 begin
-                   GetProductInfo( dwOSMajorVersion, dwOSMinorVersion,
-                             dwSpMajorVersion, dwSpMinorVersion,
-                             fVerProEx );
-                   if fVerProEx = $ABCDABCD then fVerProEx:= High(ProdStrEx);
-                 end;
-                 case fVerMin of       // Windows Vista
-                   0: begin
-                        case fProdTyp of
-                          VER_NT_WORKSTATION:
-                          begin
-                            fVerTyp:= 11;    // Windows Vista
-                             if (fVerMask and VER_SUITE_PERSONAL) = VER_SUITE_PERSONAL
-                            then fVerPro:= 1     //Home Edition
-                            else fVerPro:= 2;     //Professional
-                          end else
-                          begin
-                            fVerTyp:= 12; // Windows Server 2008
-                          end;
-                        end;
-                      end;
-                   1: begin
-                        case fProdTyp of
-                          VER_NT_WORKSTATION:
-                          begin
-                            fVerTyp:= 14;    // Windows 7
-                            if (fVerMask and VER_SUITE_PERSONAL) = VER_SUITE_PERSONAL
-                            then fVerPro:= 1     //Home Edition
-                            else fVerPro:= 2;     //Professional
-                          end else
-                          begin
-                            fVerTyp:= 13; // Windows Server 2008 RC2
-                          end;
-                        end;
-                      end;
-                   2: begin
-                        case fProdTyp of
-                          VER_NT_WORKSTATION:
-                          begin
-                            fVerTyp:= 15;    // Windows 8
-                            if (fVerMask and VER_SUITE_PERSONAL) = VER_SUITE_PERSONAL
-                            then fVerPro:= 1     //Home Edition
-                            else fVerPro:= 2;     //Professional
-                          end else
-                          begin
-                            fVerTyp:= 16; // Windows Server 2012
-                          end;
-                        end;
-                      end;
-                   3: begin
-                       case fProdTyp of
-                          VER_NT_WORKSTATION:
-                          begin
-                            fVerTyp:= 17;    // Windows 8.1
-                            if (fVerMask and VER_SUITE_PERSONAL) = VER_SUITE_PERSONAL
-                            then fVerPro:= 1     //Home Edition
-                            else fVerPro:= 2;     //Professional
-                          end else
-                          begin
-                            fVerTyp:= 18; // Windows 2012 Server R2
-                          end;
-                        end;
-                      end;
-                 end;     //case fVermin
-               end;
-          10: begin
-                if Assigned(GetProductInfo) then
-                 begin
-                   GetProductInfo( dwOSMajorVersion, dwOSMinorVersion,
-                             dwSpMajorVersion, dwSpMinorVersion,
-                             fVerProEx );
-                  if fVerProEx = $ABCDABCD then fVerProEx:= High(ProdStrEx);
+                  end;
+                end else
+                begin
+                  if fVerbuild < 14394 then
+                  begin
+                    fVerTyp:= 20;                           // Windows Server 2016
+                  end else
+                  begin
+                     if fVerbuild < 20348 then fVerTyp:= 21 // Windows Server 2019
+                     else fVerTyp:= 23;                     // Windows server 2022
+                  end;
                 end;
-                case fVerMin of       // Windows 10  and Windows 11
-                   0: begin
-                        case fProdTyp of
-                          VER_NT_WORKSTATION:
-                          begin
-                            // Windows 11 build number start with 22000
-                            // Windows 10 build number start with 10000
-                            if FVerBuild < 22000 then fVerTyp:= 19      // Windows 10
-                            else fVerTyp:= 22  ;                        // Windows 11
-
-                            if (fVerMask and VER_SUITE_PERSONAL) = VER_SUITE_PERSONAL
-                            then fVerPro:= 1     //Home Edition
-                            else fVerPro:= 2;     //Professional
-                            // Match builds to Win 10 version commercial name
-                            // Build numbers are in Win10build array
-                            // The array can be updated from the calling application
-                            FVersup:= Win10Build[0, 1]; //'Unknown version';
-                            for i:= 0 to length(Win10build)-1 do
-                              if FVerBuild=StringToInt(Win10build[i,0]) then
-                              begin
-                                FVersup:= Win10Build[i, 1];
-                                break;
-                              end;
-                          end else
-                          begin
-                            if fVerbuild < 14394 then
-                            begin
-                              fVerTyp:= 20; // Windows Server 2016
-                            end else
-                            begin
-                              if fVerbuild < 20348 then fVerTyp:= 21 // Windows Server 2019
-                              else fVerTyp:= 23;                     // Windows server 2022
-                            end;
-                          end;
-                        end;
-                      end;
-                    end;
-               end;
-          end;            //case fVermaj
+          end;// Case fVerMin
+        end;  // Case 10
+  end;        // Case fVermaj
 end;
 
 // End of Windows code, begin Linux, Unix or Mac code

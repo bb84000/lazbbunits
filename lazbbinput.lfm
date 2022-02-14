@@ -1,0 +1,50 @@
+object InputDlg: TInputDlg
+  Left = 704
+  Height = 113
+  Top = 338
+  Width = 528
+  BorderIcons = [biSystemMenu, biMinimize]
+  BorderStyle = bsDialog
+  Caption = 'InputDlg'
+  ClientHeight = 113
+  ClientWidth = 528
+  OnShow = FormShow
+  LCLVersion = '2.2.0.4'
+  object BtnOK: TBitBtn
+    Left = 140
+    Height = 30
+    Top = 72
+    Width = 90
+    Default = True
+    DefaultCaption = True
+    Kind = bkOK
+    ModalResult = 1
+    TabOrder = 0
+  end
+  object BtnCancel: TBitBtn
+    Left = 260
+    Height = 30
+    Top = 72
+    Width = 90
+    Cancel = True
+    Caption = 'Annuler'
+    Kind = bkCancel
+    ModalResult = 2
+    TabOrder = 1
+  end
+  object LMessage: TLabel
+    Left = 15
+    Height = 15
+    Top = 16
+    Width = 496
+    AutoSize = False
+    Caption = 'Saisir  le texte'
+  end
+  object EText: TEdit
+    Left = 15
+    Height = 23
+    Top = 39
+    Width = 493
+    TabOrder = 2
+  end
+end

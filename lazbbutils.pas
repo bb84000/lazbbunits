@@ -1,6 +1,6 @@
 {*******************************************************************************}
 { Unité lazbbutils : cross platform utilities                                   }
-{ bb - sdtp - october 2019                                                      }
+{ bb - sdtp - february 2022                                                      }
 {*******************************************************************************}
 
 unit lazbbutils;
@@ -11,7 +11,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Buttons, StdCtrls, ExtCtrls, FileInfo,
-  lclintf, LazUTF8, math,  base64, Process, lazbbalert;
+  lclintf, LazUTF8, math,  base64, Process, lazbbalert, lazbbinput;
 
 type
 
@@ -35,6 +35,7 @@ type
   function MsgDlg(const Capt, Msg: string; DlgType: TMsgDlgType;
       Buttons: TMsgDlgButtons; Captions: ARRAY OF string; HelpCtx: Longint=0;  Pos: TPosition=poMainFormCenter): Integer;
   function AlertDlg(Capt: string; Msg: string; Captions: ARRAY OF string; cbEnable: boolean= false; DlgType: TMsgDlgType=mtInformation; Pos: TPosition=poMainFormCenter):  integer;
+  function InputDlg(Capt, Msg, txt, BtnOKCapt, BtnCancelCapt: string; width: Integer; Pos: TPosition=poMainFormCenter):string ;
   function GetVersionInfo(): TVersionInfo;
   function Str2Date (s, format: String): TDateTime;
   function TrimFileExt(FileName: String): String;
@@ -787,6 +788,22 @@ begin
   AlBox.Destroy;
 end;
 
+function InputDlg(Capt, Msg, txt, BtnOKCapt, BtnCancelCapt: string; width: Integer; Pos: TPosition=poMainFormCenter):string ;
+var
+  InBox: TInputDlg;
+begin
+  InBox:= TInputDlg.create(nil);
+  if length(Capt)>0 then InBox.Caption:=Capt else InBox.Caption:='InputDlg';
+  if length(Msg)>0 then InBox.LMessage.Caption:=Msg else InBox.LMessage.Caption:='Enter message';
+  if length(Txt)>0 then InBox.EText.Text:= txt else InBox.EText.Text:='';
+  if length(BtnOKCapt)>0 then InBox.BtnOK.Caption:= BtnOKCapt;
+  if length(BtnCancelCapt)>0 then InBox.BtnCancel.Caption:= BtnCancelCapt;
+  INBox.Position:= Pos;
+  if width > 0 then InBox.Width:= width;
+  InBox.ShowModal;
+  Result:= InBox.EText.Text;
+  InBox.Destroy;
+end;
 // Convert version string (a.b.c.d) to int64
 // "d" is the lower word, "a" is the higher word.
 // Equivalent to d+c*65636+b*65636*65636*a*65636*65636*65636

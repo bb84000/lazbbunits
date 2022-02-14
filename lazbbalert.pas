@@ -28,6 +28,7 @@ type
     DlgType : TMsgDlgType;
   end;
 
+
 var
   AlertBox: TAlertBox;
   Picture: TPicture;

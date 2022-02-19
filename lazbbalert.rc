@@ -1,7 +1,0 @@
-// Alertbox icons resource
-
-AL_WARNING       RCDATA "images\\al_warning.png"
-AL_INFORMATION   RCDATA "images\\al_information.png"
-AL_ERROR         RCDATA "images\\al_error.png"
-AL_CONFIRMATION  RCDATA "images\\al_confirmation.png"
-

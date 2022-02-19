@@ -11,7 +11,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Buttons, StdCtrls, ExtCtrls, FileInfo,
-  lclintf, LazUTF8, math,  base64, Process, lazbbalert, lazbbinput;
+  lclintf, LazUTF8, math,  base64, Process, lresources;
 
 type
 
@@ -34,8 +34,8 @@ type
   function IsUtf82Ansi(st: string): string;
   function MsgDlg(const Capt, Msg: string; DlgType: TMsgDlgType;
       Buttons: TMsgDlgButtons; Captions: ARRAY OF string; HelpCtx: Longint=0;  Pos: TPosition=poMainFormCenter): Integer;
-  function AlertDlg(Capt: string; Msg: string; Captions: ARRAY OF string; cbEnable: boolean= false; DlgType: TMsgDlgType=mtInformation; Pos: TPosition=poMainFormCenter):  integer;
-  function InputDlg(Capt, Msg, txt, BtnOKCapt, BtnCancelCapt: string; width: Integer; Pos: TPosition=poMainFormCenter):string ;
+  function AlertDlg(Capt: string; Msg: string; BtnCaptions: ARRAY OF string; cbEnable: boolean= false; DlgType: TMsgDlgType=mtInformation; Pos: TPosition=poMainFormCenter):  integer;
+  function InputDlg(Capt, Msg, txt: string; BtnCaptions: ARRAY OF string; width: Integer; Pos: TPosition=poMainFormCenter):string ;
   function GetVersionInfo(): TVersionInfo;
   function Str2Date (s, format: String): TDateTime;
   function TrimFileExt(FileName: String): String;
@@ -84,6 +84,8 @@ type
   // encryption values
   C1 = 34419;
   C2 = 23602;
+
+
 
 implementation
 
@@ -762,48 +764,160 @@ begin
   end;
 end;
 
+// Create and use DlgForm to build AlertDlg and InputDlg  eetc...
+
+type
+
+TDlgForm = class(TForm)
+    OKButton, CancelButton: TbitBtn;
+    EText: TEdit;
+    PnlMain: TPanel;
+    Image1: TImage;
+    private
+    public
+
+    constructor create(aOwner: TComponent);
+  end;
+
+
+constructor TDlgForm.create(aOwner: TComponent);
+begin
+  inherited CreateNew( nil);
+  BorderStyle:= bsSingle;
+  BorderIcons:=[biSystemMenu];
+  SetBounds(50,50,500,50);
+  PnlMain:= TPanel.Create(self);
+  Image1:= TImage.Create(PnlMain);
+  OKButton:=TBitBtn.create(self);
+  OKButton.Parent:= self;
+  OKButton.SetBounds(140, 72, 90, 30);
+  OKButton.Kind:= bkOK;
+  CancelButton:=TBitBtn.create(self); 
+  CancelButton.Parent:=self;
+  CancelButton.SetBounds(260, 72, 90, 30);
+  CancelButton.Kind:= bkCancel;
+end;
+
+
+function DlgForm(capt: String; BtnCaptions: ARRAY OF string;  wid: integer; Pos: TPosition=poMainFormCenter): TDlgForm;
+var
+  FDlgForm: TDlgForm;
+begin
+  FDlgForm:= TDlgForm.create(nil);
+  with FDlgForm do
+  begin
+    parent:= nil;
+    Caption:= capt;
+    OKButton.left:= (Clientwidth - (OKButton.Width*2) - 30) div 2;
+    CancelButton.left:= OKButton.left+OKButton.Width+30;
+    Height:= OKButton.top+OKButton.Height+15;
+    if length(BtnCaptions)> 0 then OKButton.Caption:= BtnCaptions[0];
+    if length(BtnCaptions)> 1  then CancelButton.Caption:= BtnCaptions[1];
+    Position:= pos;
+  end;
+  result:= FDlgForm;
+end;
+
+// Width configurable inputbox
+
+function InputDlg(Capt, Msg, txt: string; BtnCaptions: ARRAY OF string; width: Integer; Pos: TPosition=poMainFormCenter):string ;
+var
+  FinputDlg: TDlgForm;
+  EText: TEdit;
+  LMessage: TLabel;
+ begin
+  if width=0 then width:= 500;
+  FinputDlg:= DlgForm(capt, BtnCaptions, width, pos);
+  with FInputDlg do
+  begin
+    if length(Capt)> 0 then Caption:=Capt else Caption:= 'Input Dialog' ;
+    LMessage:= TLabel.Create(FInputDlg);
+    LMessage.SetBounds(15, 10, ClientWidth-30, 15);
+    LMessage.Parent:= FInputDlg;
+    if length(Msg) > 0 then LMessage.Caption:=Msg else LMessage.Caption:= 'Enter text';
+    EText:= TEdit.Create(FinputDlg);
+    EText.parent:= FinputDlg;
+    EText.SetBounds(15, LMessage.top+LMessage.Height+10, Width-30, 23);
+    EText.Text:= txt;
+    EText.TabOrder:= 0;
+    OKButton.top:= EText.top+EText.Height+15;
+    CancelButton.top:= OKButton.top;
+    if ShowModal= mrOK then result:= EText.Text else result:='';
+    FreeAndNil(FInputDlg);
+  end;
+end;
+
 // Alert Dialog; parameters are same as MsgDlg
 // Captions: string translations: OKBtn, CancelBtn, checkbox caption
 // cbEnable: show do not show checkbox
 
-function AlertDlg(Capt: string; Msg: string; Captions: ARRAY OF string; cbEnable: boolean= false; DlgType: TMsgDlgType=mtInformation; Pos: TPosition=poMainFormCenter):  integer;
+function AlertDlg(Capt: string; Msg: string; BtnCaptions: ARRAY OF string; cbEnable: boolean= false;
+                 DlgType: TMsgDlgType=mtInformation; Pos: TPosition=poMainFormCenter): integer;
  var
-  AlBox: TAlertBox;
+   FAlertDlg: TDlgForm;
+   Image1: TImage;
+   LAlert: TLabel;
+   CBNoShowAlert: TCheckbox;
 begin
-  AlBox:= TAlertBox.Create(nil);
-  if length(Capt)>0 then AlBox.Caption:=Capt else AlBox.Caption:='AlertBox';
-  if length(Msg)>0 then AlBox.LAlert.Caption:=Msg else AlBox.LAlert.Caption:='AlertBox message';
-  AlBox.DlgType:= DlgType;
-  if length(Captions)> 0 then AlBox.BtnOK.Caption:= Captions[0];
-  if length(Captions)> 1  then AlBox.BtnCancel.Caption:= Captions[1];
-  if length(Captions)> 2  then  AlBox.CBNoShowAlert.Caption:= Captions[2];
-  AlBox.CBNoShowAlert.visible:= cbEnable;
-  if not cbEnable then
+  {$I lazbbutils.lrs}
+  FAlertDlg:= DlgForm(capt, BtnCaptions,  0, pos);//TForm.create(nil);
+  With FAlertDlg do
   begin
-    //Btn
+    height:= 129;
+    Width:= 428;
+    if length(Capt) > 0 then Caption:=Capt else Caption:= 'Alert Dialog';
+    Position:= Pos;
+    PnlMain.Parent:= FAlertDlg;
+    PnlMain.SetBounds(10, 8, 404, 74);
+    PnlMain.BevelInner:=bvLowered;
+    PnlMain.BevelOuter:=bvRaised;
+    Image1.Parent:= PnlMain;
+    Image1.SetBounds(10, 5, 32, 32);
+    Case DlgType of
+      mtWarning: Image1.Picture.LoadFromLazarusResource('al_warning');
+      mtInformation: Image1.Picture.LoadFromLazarusResource('al_information');
+      mtError: Image1.Picture.LoadFromLazarusResource('al_error');
+      mtConfirmation: Image1.Picture.LoadFromResourceName(HInstance, 'al_confirmation');
+    end;
+    LAlert:= TLabel.Create(PnlMain);
+    LAlert.Parent:= PnlMain;
+    LAlert.SetBounds(56, 5, 336, 15);
+    LAlert.WordWrap:= true;
+    LAlert.AutoSize:= true;
+    LAlert.Caption:= Msg;
+    // Adjust height of label, buttons position and form haight according text in the memo
+    // Set width, then minwidth=width, then anchor left, right and top, finally set autosize.
+    PnLMain.Height:= LAlert.height+10;
+    if PnlMain.Height < Image1.Height+10 then
+    begin
+      PnlMain.Height:= Image1.Height+10;
+      LAlert.Top:= (PnlMain.ClientHeight-LAlert.Height) div 2;
+    end;
+    Image1.Top:= (PnlMain.ClientHeight-Image1.Height) div 2 ;
+    CBNoShowAlert:= TCheckBox.create(FAlertDlg);
+    CBNoShowAlert.Parent:= FAlertDlg;
+    CBNoShowAlert.SetBounds(14, 95, 198, 19);
+    if length(BtnCaptions)> 2  then CBNoShowAlert.Caption:= BtnCaptions[2] else
+    CBNoShowAlert.Caption:= 'No longer display this alert';
+    CBNoShowAlert.Visible:=cbEnable;
+    OKButton.Top:= PnlMain.Top+PnlMain.Height+10;
+    CBNoShowAlert.Top:= OKButton.Top+4;
+    CancelButton.top:= OKButton.Top;
+    if CBNoShowAlert.visible then
+    begin
+      //Align buttons on the right
+      CancelButton.left:= PnlMain.left+PnlMain.width-CancelButton.width;
+      OKButton.Left:= CancelButton.left-CancelButton.Width-10;
+    end;
+    FAlertDlg.Height:= OKButton.top+OKButton.Height+10;
+    result:= ShowModal;
+    if CBNoShowAlert.Checked then result:= result+9;  //mrYestoAll if mrOK and checked
   end;
-  AlBox.Position:= Pos;
-  result:= AlBox.ShowModal;
-  if AlBox.CBNoShowAlert.Checked then result:= result+9;  //mrYestoAll if mrOK and checked
-  AlBox.Destroy;
+  FreeAndNil(FAlertDlg)
 end;
 
-function InputDlg(Capt, Msg, txt, BtnOKCapt, BtnCancelCapt: string; width: Integer; Pos: TPosition=poMainFormCenter):string ;
-var
-  InBox: TInputDlg;
-begin
-  InBox:= TInputDlg.create(nil);
-  if length(Capt)>0 then InBox.Caption:=Capt else InBox.Caption:='InputDlg';
-  if length(Msg)>0 then InBox.LMessage.Caption:=Msg else InBox.LMessage.Caption:='Enter message';
-  if length(Txt)>0 then InBox.EText.Text:= txt else InBox.EText.Text:='';
-  if length(BtnOKCapt)>0 then InBox.BtnOK.Caption:= BtnOKCapt;
-  if length(BtnCancelCapt)>0 then InBox.BtnCancel.Caption:= BtnCancelCapt;
-  INBox.Position:= Pos;
-  if width > 0 then InBox.Width:= width;
-  InBox.ShowModal;
-  Result:= InBox.EText.Text;
-  InBox.Destroy;
-end;
+
+
 // Convert version string (a.b.c.d) to int64
 // "d" is the lower word, "a" is the higher word.
 // Equivalent to d+c*65636+b*65636*65636*a*65636*65636*65636
@@ -832,6 +946,8 @@ begin
     end;
   end;
 end;
+
+initialization
 
 end.
 

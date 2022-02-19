@@ -339,6 +339,7 @@ const
     fVerProEx: DWORD;
     // GetProductInfo doesn't exists before Vista, so we load it dynamically
     // We need to test it is assigned before use it in the unit
+    hProductInfo: THandle;
     GetProductInfo: function (dwOSMajorVersion, dwOSMinorVersion,
                             dwSpMajorVersion, dwSpMinorVersion: DWORD;
                             var pdwReturnedProductType: DWORD): BOOL stdcall = NIL;
@@ -373,8 +374,9 @@ begin
   FVerBuild:=0;
   FVerDetail:='';
   {$IFDEF WINDOWS}
-    Pointer(GetProductInfo) := GetProcAddress(GetModuleHandle('KERNEL32.DLL'),
-                                    'GetProductInfo');
+    hProductInfo:= LoadLibrary (PChar('KERNEL32.DLL'));
+    Pointer(GetProductInfo) := GetProcAddress(hProductInfo,  'GetProductInfo');
+    //GetProcAddress(GetModuleHandle('KERNEL32.DLL'), 'GetProductInfo');
     // populate dynamic arrays for product details and versions with default values
     SetLength(ProdStr, Length(ProductStr));
     for i:= 0 to high(ProdStr) do ProdStr[i]:= ProductStr[i];
@@ -415,7 +417,7 @@ begin
   inherited;
   {$IFDEF WINDOWS}
     try
-     if Assigned(GetProductInfo) then  FreeAndNil(GetProductInfo);
+     if hProductInfo<>0 then  FreeLibrary(hProductInfo);
     except
     end;
   {$ENDIF}

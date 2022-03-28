@@ -1,9 +1,10 @@
-{****************************************************************************** }
-{ lazbbabout - About box for author applications                                }
-{ Check new versions functions                                                  }
-{ bb - sdtp - april 2021                                                     }
-{ Can change width to adapt to program                                           }
-{*******************************************************************************}
+{******************************************************************************
+ lazbbabout - About box for author applications                               
+ Check new versions functions                                                  
+ bb - sdtp - april 2021                                                     
+ Can change width to adapt to program
+ Deprecated unit. Use lazbbaboutdlg unit. Don't need to change your code
+*******************************************************************************}
 unit lazbbaboutupdate;
 
 {$mode objfpc}{$H+}

@@ -1,8 +1,9 @@
-{****************************************************************************** }
-{ lazbbabout - About box for author applications                                }
-{ bb - sdtp - november 2019                                                     }
-{Can change with to adapt to program                                            }
-{*******************************************************************************}
+{******************************************************************************
+ lazbbabout - About box for author applications                                
+ bb - sdtp - november 2019                                                     
+ Can change with to adapt to program    
+ Deprecated unit. Use lazbbaboutdlg instead
+*******************************************************************************}
 unit lazbbabout;
 
 {$mode objfpc}{$H+}

@@ -65,7 +65,7 @@ type
   function DarkColor(col : TColor) : Boolean;
   procedure Execute(exec: string; param: TStrings);
   function VersionToInt (VerStr: String): int64;
-
+  function CharSum(s: string): int64;
 
   const
   SRCCOPY = $00CC0020;
@@ -945,6 +945,16 @@ begin
       Result:= -1;
     end;
   end;
+end;
+
+// Simple sum of characters value
+
+function CharSum(s: string): int64;
+var
+ i: integer;
+begin
+  result:=0;
+  for i:=1 to length(s) do result:=result+ord(s[i]);
 end;
 
 initialization

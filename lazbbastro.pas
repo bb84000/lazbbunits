@@ -35,13 +35,13 @@ const
   noleapyear: array [1..13] of integer =     (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365);
 
 
-  function GetPaques(Year: Word): TDateTime;
+  //function GetPaques(Year: Word): TDateTime;
   // Moon functions
-  function Get_MoonDays(gDate: TDateTime): TMoonDays; // retourne dates lune sur 52 sem
-  function isMoon(gDate: TDateTime): Boolean;         // retourne vrai si NL,PQ,PL,DQ
-  function Get_MoonType(gDate: TDateTime): string;    // retourne NL,PQ,PL,DQ
+  //function Get_MoonDays(gDate: TDateTime): TMoonDays; // retourne dates lune sur 52 sem
+  //function isMoon(gDate: TDateTime): Boolean;         // retourne vrai si NL,PQ,PL,DQ
+  //function Get_MoonType(gDate: TDateTime): string;    // retourne NL,PQ,PL,DQ
   // Seasons function
-  function GetSeasonDate(year: word; Num: Integer): TDateTime;
+  //function GetSeasonDate(year: word; Num: Integer): TDateTime;
   // Get the 1st of a month
   function GetBegMonth(dDate: TDateTime): word;
   // French special days
@@ -53,8 +53,8 @@ const
   // dt: Date for sunrise and sunset
   // latitude and longitude (West negative)
   // Type sun standard, civil, nautic, astro (default: standard)
-  function Sunrise(dt: TDateTime; latitude, longitude: double; TypeSun: TypSunRise=standard): TDateTime;
-  function Sunset(dt: TDateTime; latitude, longitude: double; TypeSun: TypSunRise=standard): TDateTime;
+  //function Sunrise(dt: TDateTime; latitude, longitude: double; TypeSun: TypSunRise=standard): TDateTime;
+  //function Sunset(dt: TDateTime; latitude, longitude: double; TypeSun: TypSunRise=standard): TDateTime;
 
 
 implementation

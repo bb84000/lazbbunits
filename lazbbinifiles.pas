@@ -1,9 +1,10 @@
 //******************************************************************************
 // lazbbinifiles : Read/write ini files with UTF16/UTF8 w or W/O BOM compatibility
-// sdtp - bb -june 2019
+// sdtp - bb - september 2022
 //   Same syntax as TiniFiles
 //   Added Text property, ini file text  (UTF-8)
 //   Added Charset property string
+//   Added Create from resource and create from stream
 //******************************************************************************
 
 unit lazbbinifiles;
@@ -13,11 +14,11 @@ unit lazbbinifiles;
 interface
 
 uses
-  Classes, SysUtils, inifiles, LazUTF8, LConvEncoding, Dialogs;
+  Classes, SysUtils, inifiles, LazUTF8, LConvEncoding, Dialogs, lazbbutils;
 
 
 type
-  TCharSet = (UTF8BOM,UTF16BEBOM,UTF16LEBOM,UTF32BEBOM,UTF32LEBOM,SCSUBOM,UTF7BOM,UTFEBCDICBOM,BOCU1BOM,UTF1BOM,UTF8NOBOM,UTF16BENOBOM,UTF16LENOBOM,ANSI,UNK);
+ // TCharSet = (UTF8BOM,UTF16BEBOM,UTF16LEBOM,UTF32BEBOM,UTF32LEBOM,SCSUBOM,UTF7BOM,UTFEBCDICBOM,BOCU1BOM,UTF1BOM,UTF8NOBOM,UTF16BENOBOM,UTF16LENOBOM,ANSI,UNK);
 
   TBbInifile = Class(TIniFile)
       fchrset: TCharSet;
@@ -30,13 +31,18 @@ type
       function GetStream: TStream;
       function GetText: String;
       procedure DetectCharset(var BS: TMemoryStream);
+      procedure ApplyCharset;
     public
       constructor Create(const AFileName: string; AOptions : TIniFileoptions = []); overload; override;
+      constructor Create(AStream: TStream; AOptions : TIniFileoptions = []); overload;
+      constructor Create(Instance: TFPResourceHMODULE; ResName: String; AOptions : TIniFileOptions = []);
       destructor destroy; override;
       function ReadString(const Section, Ident, Default: string): string; override;
       procedure WriteString(const Section, Ident, Value: String); override;
       procedure ReadSection(const Section: string; Strings: TStrings); override;
       procedure ReadSectionRaw(const Section: string; Strings: TStrings);
+
+
       procedure ReadSections(Strings: TStrings); override;
       procedure ReadSectionValues(const Section: string; Strings: TStrings; AOptions : TSectionValuesOptions = [svoIncludeInvalid]); overload; override;
       procedure EraseSection(const Section: string); override;
@@ -49,7 +55,7 @@ type
 
   const
   Charsets: array [0..14] of TCharSet = (UTF8BOM,UTF16BEBOM,UTF16LEBOM,UTF32BEBOM,UTF32LEBOM,SCSUBOM,UTF7BOM,UTFEBCDICBOM,BOCU1BOM,UTF1BOM,UTF8NOBOM,UTF16BENOBOM,UTF16LENOBOM,ANSI,UNK);
-
+  RT_RCDATA = MAKEINTRESOURCE(10);
 
   CharSetArray : array[0..14] of String = ('UTF-8 with BOM','UTF-16 Big Endian vith BOM','UTF-16 Little Endian with BOM','UTF-32 Big Endian with BOM',
                   'UTF-32 Little Endian with BOM','SCSU with BOM','UTF-7 with BOM','UTF EBCDIC with BOM','BOCU-1 with BOM',
@@ -84,7 +90,8 @@ begin
       // search zeros if unicode 16
       for i:= 0 to 10 do
       begin
-        if MS.ReadByte = 0 then
+        //if MS.ReadByte = 0 then
+        if BS.ReadByte = 0 then
         begin
           if (i mod 2)=0 then
           begin
@@ -100,21 +107,13 @@ begin
 
   end;
   fcharset:= CharSetArray[ord(fchrset)];
-
 end;
 
-constructor TBbIniFile.Create(const AFileName: string; AOptions : TIniFileOptions = []);
+procedure TBbIniFile.ApplyCharset;
 var
   S: String;
 begin
- fchange:= false;
- bfilename:= AFileName;
- MS:= TMemoryStream.Create;
- fchrset:= UTF8NOBOM;              // Default UTF-8 w/o BOM
- if FileExists(bfilename) then
  try
-   MS.LoadFromFile(bfilename);
-   DetectCharset(MS);
    MS.Position := 0;
    Case fchrset of
       UTF16BEBOM, UTF16LEBOM : // Unicode with BOM
@@ -140,12 +139,58 @@ begin
         end;
      // else likely UTF-8 w/o BOM
    end;
+ finally
+ end;
+end;
+
+constructor TBbIniFile.Create(const AFileName: string; AOptions : TIniFileOptions = []);
+begin
+ fchange:= false;
+ bfilename:= AFileName;
+ MS:= TMemoryStream.Create;
+ fchrset:= UTF8NOBOM;              // Default UTF-8 w/o BOM
+ if FileExists(bfilename) then
+ try
+   MS.LoadFromFile(bfilename);
+   DetectCharset(MS);
+   ApplyCharset;
  except
  end;
  MS.Position:= 0;
  IniFile:= TIniFile.Create(MS, AOptions);
 end;
 
+constructor TBbIniFile.Create(AStream: TStream; AOptions : TIniFileoptions = []); overload;
+begin
+  fchange:= false;
+  MS:= TMemoryStream.Create;
+  try
+    MS.CopyFrom(AStream, AStream.Size);
+    DetectCharset(MS);
+    ApplyCharset;
+  except
+  end;
+  MS.Position:= 0;
+  IniFile:= TIniFile.Create(MS, AOptions);
+end;
+
+constructor TBbIniFile.Create(Instance: TFPResourceHMODULE; ResName: String; AOptions : TIniFileOptions = []); overload;
+var
+  RS: TResourceStream;
+begin
+  fchange:= false;
+  MS:= TMemoryStream.Create;
+  try
+    RS:= TResourceStream.Create(Instance, ResName, RT_RCDATA );
+    MS.CopyFrom(RS, RS.Size);
+    DetectCharset(MS);
+    ApplyCharset;
+    RS.Free;
+  except
+  end;
+  MS.Position:= 0;
+  IniFile:= TIniFile.Create(MS, AOptions);
+end;
 
 function TBbIniFile.ReadString(const Section, Ident, Default: string): string;
 begin

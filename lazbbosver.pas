@@ -1,7 +1,7 @@
 {******************************************************************************}
 { lazbbosver - Returns OS version information (Windows, Linux and Mac          }
 { Replacement for lazbbosversion unit, uses class instead record               }
-{ sdtp - bb - february 2022                                                    }
+{ sdtp - bb - september 2022                                                    }
 { Localization data in lazbbosver.lng to copy in application .lng file         }
 {******************************************************************************}
 unit lazbbosver;
@@ -84,7 +84,7 @@ Type
       wServicePackMinor: Word;
       wSuiteMask: WORD;
       wProductType: BYTE;
-    wReserved: BYTE;
+      wReserved: BYTE;
     end;
     _OSVERSIONINFOEXW = record
       dwOSVersionInfoSize: DWORD;
@@ -314,8 +314,8 @@ const
                                          'Home',
                                          'Professional',
                                          'Server');
-    // First element: build number, second element: english, third element: french
-    //Windows10Build: array [0..14,0..1] of String
+    // First element: build number, second element: english
+
     Windows10Build: array of array [0..1] of String =(('00000',    'Unknown version'),
                                               ('10240', 'v 1507 "July 2015 update"'),
                                               ('10586', 'v 1511 "November 2015 update"'),
@@ -329,11 +329,12 @@ const
                                               ('19041', 'v 2004 "May 2020 update"'),
                                               ('19042', 'v 20H2 "October 2020 update"'),
                                               ('19043', 'v 21H1 "May 2021 update"'),
-                                              ('19044', 'v 21H2 "November 2021 update'),
-                                              ('22000', 'v 21H2 "October 2021 Initial version'));
+                                              ('19044', 'v 21H2 "November 2021 update"'),
+                                              ('19045', 'v 22H2 "October 2022 update"'));
 
     Windows11Build: array of array [0..1] of String = (('00000',    'Unknown version'),
-                                              ('22000', 'v 21H2 "October 2021 Initial version'));
+                                              ('22000', 'v 21H2 "October 2021 Initial version"'),
+                                              ('22621', 'v 22H2 "September 2022 update"'));
 
     var
     fVerProEx: DWORD;
@@ -343,11 +344,11 @@ const
     GetProductInfo: function (dwOSMajorVersion, dwOSMinorVersion,
                             dwSpMajorVersion, dwSpMinorVersion: DWORD;
                             var pdwReturnedProductType: DWORD): BOOL stdcall = NIL;
-     {$ENDIF}
+    // Redefine the GetVersionEx function with proper TOSVersionInfoEx parameter
+    function GetVersionEx(var lpVersionInformation: TOSVersionInfoEx): BOOL;external 'kernel32' name 'GetVersionExA';
+   {$ENDIF}
 
 implementation
-
-
 
 // lang: "en", "fr" see content of .lng files
 // LangFile: Tbbinifile
@@ -376,7 +377,6 @@ begin
   {$IFDEF WINDOWS}
     hProductInfo:= LoadLibrary (PChar('KERNEL32.DLL'));
     Pointer(GetProductInfo) := GetProcAddress(hProductInfo,  'GetProductInfo');
-    //GetProcAddress(GetModuleHandle('KERNEL32.DLL'), 'GetProductInfo');
     // populate dynamic arrays for product details and versions with default values
     SetLength(ProdStr, Length(ProductStr));
     for i:= 0 to high(ProdStr) do ProdStr[i]:= ProductStr[i];
@@ -456,16 +456,13 @@ end;
 procedure TOSVersion.GetSysInfo;
 var
   OsViEx : TOSVersionInfoEx;
-  OsVi : TOSVersionInfo;
 begin
   fVerProEx:= 0;
-  // Free Pascal GetVersionEx function use OSVersionInfo structure instead OSVersionInfoEx
-  // We call it with an OSVersionInfo variable with OSVersionInfoEx size
+  // Free Pascal GetVersionEx function use OSVersionInfo structure instead OSVersionInfoEx,
+  // So, we have redefined it
   OsViEx:= Default(TOSVersionInfoEx);
-  OsVi.dwOSVersionInfoSize:= SizeOf(TOSVersionInfoEx);
-  GetVersionEx (Osvi);
-  // Then we move memory to the OSVersionInfoEx variable and we get extra items.
-  Move(OsVi, OsViEx,SizeOf(TOSVersionInfoEx));
+  OsViEx.dwOSVersionInfoSize:= SizeOf(TOSVersionInfoEx);
+  GetVersionEx (OsViEx);
   With OsViEx do
   begin
     fVerMaj:=dwMajorVersion;

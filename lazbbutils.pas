@@ -67,8 +67,10 @@ type
   function VersionToInt (VerStr: String): int64;
   function CharSum(s: string): int64;
 
+
   const
   SRCCOPY = $00CC0020;
+
   Charsets: array [0..14] of TCharSet = (UTF8BOM,UTF16BEBOM,UTF16LEBOM,UTF32BEBOM,UTF32LEBOM,SCSUBOM,UTF7BOM,UTFEBCDICBOM,BOCU1BOM,UTF1BOM,UTF8NOBOM,UTF16BENOBOM,UTF16LENOBOM,ANSI,UNK);
 
 
@@ -823,7 +825,6 @@ end;
 function InputDlg(Capt, Msg, txt: string; BtnCaptions: ARRAY OF string; width: Integer; Pos: TPosition=poMainFormCenter):string ;
 var
   FinputDlg: TDlgForm;
-  EText: TEdit;
   LMessage: TLabel;
  begin
   if width=0 then width:= 500;
@@ -855,7 +856,6 @@ function AlertDlg(Capt: string; Msg: string; BtnCaptions: ARRAY OF string; cbEna
                  DlgType: TMsgDlgType=mtInformation; Pos: TPosition=poMainFormCenter): integer;
  var
    FAlertDlg: TDlgForm;
-   Image1: TImage;
    LAlert: TLabel;
    CBNoShowAlert: TCheckbox;
 begin
@@ -956,6 +956,10 @@ begin
   result:=0;
   for i:=1 to length(s) do result:=result+ord(s[i]);
 end;
+
+// Load Csv frome resource
+
+
 
 initialization
 

@@ -1,11 +1,12 @@
 {******************************************************************************
  lazbbaboutdlg - About box for author applications and update check on GitHub
  Check new versions functions                                                  
- bb - sdtp - february 2022
+ bb - sdtp - january 2023
  Replace lazbbaboutupdate unit:
  - Remove AboutBox creation in application level, creation is done
    in the unit initialization section.
  - No changes in AboutBox use, same parameters as previous one
+ - 23/01/2023 : added translate procedure
 *******************************************************************************}
 unit lazbbaboutdlg;
 
@@ -15,7 +16,8 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  Buttons, lclintf, fphttpclient, fpopenssl, openssl, opensslsockets, lazbbutils;
+  Buttons, lclintf, fphttpclient, fpopenssl, openssl, opensslsockets, lazbbutils,
+  lazbbinifiles;
 
 type
 
@@ -60,6 +62,7 @@ type
     ProgName: String;             // Nom du programme
     Checked, NewVersion: Boolean; // New version check
     function ChkNewVersion (url: string=''): string;
+    procedure Translate(LngFile: TBbIniFile);
   end;
 
 var
@@ -245,6 +248,35 @@ procedure TAboutDlg.LabelMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
   TLabel(Sender).Font.style:= [];
+end;
+
+// Self localization procedure. LangFile parameter is language related ini file
+
+procedure TAboutDlg.Translate(LngFile: TBbInifile);
+var
+  DefaultCaption: String;
+begin
+  if assigned (Lngfile) then
+  with LngFile do
+  begin
+    BtnOK.Caption:= ReadString('Common', 'OKBtn', BtnOK.Caption);
+    DefaultCaption:= ReadString('Common', 'DefaultCaption', '...');
+    Caption:= Format(ReadString('AboutBox','Caption','A propos de %s'), [DefaultCaption]);
+    sLastUpdateSearch:= ReadString('AboutBox','sLastUpdateSearch','Dernière recherche de mise à jour');
+    sUpdateAvailable:= ReadString('AboutBox', 'sUpdateAvailable','Nouvelle version %s disponible');
+    sNoUpdateAvailable:= Format(ReadString('AboutBox', 'sNoUpdateAvailable','%s est à jour'), [DefaultCaption]);
+    LProductName.Caption:= DefaultCaption;
+    LProgPage.Caption:= ReadString('AboutBox', 'LProgPage.Caption', LProgPage.Caption);
+    LWebSite.Caption:= ReadString('AboutBox', 'LWebSite.Caption', LWebSite.Caption);
+    LSourceCode.Caption:= ReadString('AboutBox', 'LSourceCode.Caption', LSourceCode.Caption);
+    UrlProgSite:= UrlSourceCode+ReadString('AboutBox', 'UrlProgSite', '/wiki/Accueil');
+    if not checked then LUpdate.Caption:=ReadString('AboutBox', 'LUpdate.Caption', LUpdate.Caption) else
+      begin
+        if NewVersion then LUpdate.Caption:= Format(sUpdateAvailable, [LastVersion])
+        else LUpdate.Caption:=sNoUpdateAvailable;
+      end;
+    LUpdate.Hint:= sLastUpdateSearch + ': ' + DateToStr(AboutBox.LastUpdate);
+  end;
 end;
 
 Initialization

@@ -1,7 +1,8 @@
-{*******************************************************************************}
-{ Unité lazbbutils : cross platform utilities                                   }
-{ bb - sdtp - february 2022                                                      }
-{*******************************************************************************}
+{*******************************************************************************
+ Unité lazbbutils : cross platform utilities
+ bb - sdtp - june 2024
+ - 24/06/2024 : added SSL not installed error translation
+*******************************************************************************}
 
 unit lazbbutils;
 
@@ -41,7 +42,7 @@ type
   function TrimFileExt(FileName: String): String;
   function FormatS(const Fmt: String; const Args: array of Const): String;
   function Charset(s: string): TCharset;
-  function RPos (Substr: string; S: string): Integer;
+  //function RPos (Substr: string; S: string): Integer;  removed, use strutils one
   procedure ImageFitToSize(var img: TImage; imgw, imgh: integer);
   procedure CropBitmap(InBitmap, OutBitMap : TBitmap; Enabled: boolean);//X, Y, W, H :Integer);
   procedure CropBitmap(InBitmap, OutBitMap : TBitmap; index: integer);
@@ -236,12 +237,13 @@ end;
 
 // Trim file extension
 function TrimFileExt(FileName: String): String;
-var
-  p: Integer;
+//var
+//  p: Integer;
 begin
-  result:= FileName;
-  p:= Pos(ExtractFileExt(FileName), FileName);
-  if p > 0 then result:= Copy(FileName, 1, p-1) else result:='';
+  result:= ChangeFileExt(FileName, '');
+  //result:= FileName;
+  //p:= Pos(ExtractFileExt(FileName), FileName);
+  //if p > 0 then result:= Copy(FileName, 1, p-1) else result:='';
 end;
 
 // modified format function to trap exception
@@ -302,29 +304,6 @@ begin
 
   end;
   ss.free;
-end;
-
-{ Fonction de recherche de sous-chaîne à partir de la fin}
-{ Syntaxe et résultat identique à celuis de la focntion Pos}
-
-Function RPos (Substr: string; S: string): Integer;
-var
-  RSub, RS : String;
-  I : Integer;
-begin
-  SetLength(RSub, Length(Substr));
-  SetLength(RS, Length(S));
-  For I:= 0 to Length(Substr)-1 do
-  begin
-    Rsub[I+1]:= Substr[Length(SubStr)-I];
-  end;
-  For I:= 0 to Length(S)-1 do
-  begin
-    RS[I+1]:= S[Length(S)-I];
-  end;
-  I:= Pos(RSub, RS);
-  If I = 0 then Result:= 0
-  else Result:= Length(S)-I+1-Length(Substr)+1;
 end;
 
 // resize image in fixed size, respect aspect ratio
@@ -558,6 +537,12 @@ begin
       if length(HttpErrMsgs[16])>0 then result:= HttpErrMsgs[16];
       exit;
     end;
+    // SSL user Messages
+    if Pos('NoSSL', ErrMsg)=1 then
+    begin
+      if length(HttpErrMsgs[17])>0 then result:= HttpErrMsgs[17];
+      exit;
+    end;
   except
   end;
 end;
@@ -778,7 +763,7 @@ TDlgForm = class(TForm)
     private
     public
 
-    constructor create(aOwner: TComponent);
+    constructor create(aOwner: TComponent); override;
   end;
 
 

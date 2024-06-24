@@ -10,7 +10,7 @@ object AboutDlg: TAboutDlg
   OnChangeBounds = FormChangeBounds
   OnCreate = FormCreate
   Position = poMainFormCenter
-  LCLVersion = '2.2.4.0'
+  LCLVersion = '3.4.0.0'
   object PnlDesc: TPanel
     Left = 7
     Height = 152

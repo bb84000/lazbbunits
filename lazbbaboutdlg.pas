@@ -1,12 +1,13 @@
 {******************************************************************************
  lazbbaboutdlg - About box for author applications and update check on GitHub
  Check new versions functions                                                  
- bb - sdtp - january 2023
+ bb - sdtp - june 2024
  Replace lazbbaboutupdate unit:
  - Remove AboutBox creation in application level, creation is done
    in the unit initialization section.
  - No changes in AboutBox use, same parameters as previous one
  - 23/01/2023 : added translate procedure
+ - 24/06/2024 : added SSL not installed error
 *******************************************************************************}
 unit lazbbaboutdlg;
 
@@ -45,7 +46,6 @@ type
     procedure LabelMouseEnter(Sender: TObject);
     procedure LabelMouseLeave(Sender: TObject);
   private
-
   public
     ErrorNum: Integer;
     ErrorMessage: String;         // Errormessage passed to main app
@@ -88,7 +88,11 @@ begin
   sl:= TStringList.create();
    if length(url)=0 then url:= ChkVerUrl;
   { SSL initialization has to be done by hand here }
-  InitSSLInterface;
+  if not InitSSLInterface then
+  begin
+    ErrorMessage:='NoSSLInstalled';
+    exit;   // avoid trouble if openssl not present
+  end;
   MyHTTPCli:= TFPHTTPClient.Create(nil);
   try
     MyHTTPCli.IOTimeout:= 20000;
@@ -117,6 +121,7 @@ begin
   except
     on e:Exception do
        ErrorMessage:= e.message
+       //ErrorMessage:= 'No Internet';
   end;
   if Assigned(MyHTTPCli) then MyHTTPCli.Free;
   if Assigned(sl) then sl.free;
@@ -174,6 +179,7 @@ end;
 
 procedure TAboutDlg.FormActivate(Sender: TObject);
 begin
+
   LWebSite.Hint:= UrlWebsite;
   LProgPage.Hint:= UrlProgSite;
   if length(UrlSourceCode)=0 then
@@ -224,6 +230,7 @@ begin
   inherited;
   UrlSourceCode:='';
 end;
+
 
 // URL Label reactions  : cursor changes to hand when mouse enter and brignt when selected
 

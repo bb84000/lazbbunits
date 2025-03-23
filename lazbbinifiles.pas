@@ -51,6 +51,7 @@ type
       property Stream: TStream read GetStream;
       property Text: string read GetText;
       property CharSet: string read fcharset;
+      property FileName: String read bfilename;
   end;
 
   const
@@ -147,6 +148,7 @@ constructor TBbIniFile.Create(const AFileName: string; AOptions : TIniFileOption
 begin
  fchange:= false;
  bfilename:= AFileName;
+ //FileName:= AFileName;
  MS:= TMemoryStream.Create;
  fchrset:= UTF8NOBOM;              // Default UTF-8 w/o BOM
  if FileExists(bfilename) then

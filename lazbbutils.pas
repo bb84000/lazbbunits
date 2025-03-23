@@ -273,6 +273,7 @@ begin
   end;
   result:= UTF8NOBOM;
   ss:= TStringStream.Create(s);
+  bom:= '';
   SetLength(bom,4);
   ss.ReadBuffer(Pointer(bom)^, 4);
 
@@ -693,13 +694,15 @@ end;
 function StringEncrypt(S: String; Key: DWord): String;
 var
   I: byte;
+  tmpres: String;
 begin
-  SetLength(Result,Length(S));
+  tmpres:= '';
+  SetLength(tmpres,Length(S));
   for I := 1 to Length(S) do begin
-     Result[I] := char(byte(S[I]) xor (Key shr 8));
-    Key := (byte(Result[I]) + Key) * C1 + C2;
+     tmpres[I] := char(byte(S[I]) xor (Key shr 8));
+    Key := (byte(tmpres[I]) + Key) * C1 + C2;
   end;
-  Result:= EncodeStringBase64(Result);
+  Result:= EncodeStringBase64(tmpres);
 end;
 
 function StringDecrypt(S: String; Key: DWord): String;

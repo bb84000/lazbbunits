@@ -1,3 +1,10 @@
+{******************************************************************************
+ lazbbupdatedlg - Auto update dialog for author applications on GitHub
+ Download zip install archive and launch installer
+ bb - sdtp - march 2025
+ - Remove UpdateDlg creation in application level, creation is done
+   in the unit initialization section.
+*******************************************************************************}
 unit lazbbupdatedlg;
 
 {$mode ObjFPC}{$H+}
@@ -6,150 +13,107 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
-  Buttons, zipper,
-  {$IFDEF WINDOWS}  ShellAPI,
+  Buttons, zipper,  lazbbinifiles,
+  {$IFDEF WINDOWS}
+  ShellAPI,
   {$ENDIF}
   ExProgressbar, fphttpclient, opensslsockets;
 
 type
-  IProgress = interface
-    procedure ProgressNotification(Text: String; MaxProgress,CurrentProgress: int64);
-  end;
+  { TUpdateDlg }
 
-  { THttpDownloader }
-
-  THttpDownloader = class
-  public
-    class var
-       data: string;
-    function download(const url : String; ProgName: String; ProgressMonitor : IProgress) : boolean;
-  private
-  var
-    ProgressMonitor : IProgress;
-    procedure DataReceived(Sender: TObject; Const ContentLength, CurrentPos : Int64);
-  end;
-
-
-  { TUpdateBox }
-
-  TUpdateBox = class(TForm, IProgress)
-    BtnUpdate: TButton;
+  TUpdateDlg = class(TForm )
     BtnDownload: TButton;
+    BtnUpdate: TButton;
     BtnAbort: TButton;
-    Edit1: TEdit;
-    Label1: TLabel;
     Panel1: TPanel;
     ProgressbarEx1: TProgressbarEx;
+    SUpdate: TStaticText;
     procedure BtnDownloadClick(Sender: TObject);
     procedure BtnUpdateClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
   private
     tmpdir: String;
     tmpzip: String;
+    sUpdtAvailable: String;
+    sNoUpdtAvailable: String;
+    sUpdtInstall: String;
+    DlError: String;
+    ZipError: String;
+    DefaultCaption: String;
   public
     ProgName: String;             // Nom du programme
-    sNewVer: String;
-    ZipInstall: String;           // URL du zip s'installation
+    UrlInstall: String;           // URL du zip s'installation
     ExeInstall: String;           // Exécutablke installation
-    procedure ProgressNotification(thetext: String; MaxProgress,CurrentProgress: int64);
+    sNewVer: String;              // New version string
+    NewVersion: Boolean;
+    procedure Translate(LngFile: TBbIniFile);
+    procedure DataReceived(Sender: TObject; Const ContentLength, CurrentPos : Int64);
   end;
 
 var
-  UpdateBox: TUpdateBox;
+  UpdateDlg: TUpdateDlg;
 
 implementation
 
 {$R *.lfm}
 
-function THttpDownloader.download(const url : String; ProgName: String; ProgressMonitor : IProgress) : boolean;
-var
-  client: TFPHTTPClient;
-  FSize : int64;
-  index : Integer;
+{ TUpdateDlg }
 
+procedure TUpdateDlg.FormShow(Sender: TObject);
 begin
-  FSize:= 0;
-  result:=true;//assume success
-  Self.ProgressMonitor:= ProgressMonitor;
-  try
-    client:= TFPHTTPClient.Create(nil);
-    client.AddHeader('User-Agent','Mozilla 5.0 (bb84000 '+ProgName+')');
-    client.AllowRedirect:= True;
-    try
-      client.HTTPMethod('HEAD', url , nil, []);
-      FSize := 0;
-      for index := 0 to Pred(client.ResponseHeaders.Count) do
-      begin
-        if LowerCase(client.ResponseHeaders.Names[index]) = 'content-length' then
-        begin
-          FSize:= StrToInt64(client.ResponseHeaders.ValueFromIndex[index]);
-        end;
-      end;
-      client.OnDataReceived:= @DataReceived;
-      data:=client.Get(url);
-    except
-      on E: Exception do
-      begin
-        if client.ResponseStatusCode > 399 then
-        begin
-          ProgressMonitor.ProgressNotification(Format('Status: %d', [client.ResponseStatusCode]) , 0, fsize);//send error message
-        end;
-        ProgressMonitor.ProgressNotification('Error: ' + E.Message , 0, Fsize);//send error message
-        result:=false;
-      end;
-    end;
-  finally
-    client.Free;
+  tmpdir:= GetTempDir;
+  tmpzip:= tmpdir+ProgName+'.zip';
+  if FileExists(tmpzip) then DeleteFile (tmpzip) ;
+  if FileExists(tmpdir+ExeInstall) then DeleteFile (tmpdir+ExeInstall);
+  if Newversion then
+  begin
+    SUpdate.Caption:= Format(sUpdtAvailable, [sNewVer]);  ;
+    BtnUpdate.Enabled:= false;
+    BtnDownload.Enabled:= true;
+  end else
+  begin
+    SUpdate.Caption:= Format(sNoUpdtAvailable, [DefaultCaption]);
+    BtnUpdate.Enabled:= false;
+    BtnDownload.Enabled:= False;
   end;
 end;
 
-
-procedure THttpDownloader.DataReceived(Sender: TObject; const ContentLength,  CurrentPos: Int64);
-begin
-  if ContentLength>0 then
-    ProgressMonitor.ProgressNotification('' , ContentLength,  CurrentPos);
-end;
-
-{ TUpdateBox }
-
-procedure TUpdateBox.FormShow(Sender: TObject);
-begin
-  Edit1.Text:= sNewVer;
-  tmpdir:= GetTempDir;
-  BtnUpdate.Enabled:= false;
-
-end;
-
-procedure TUpdateBox.BtnDownloadClick(Sender: TObject);
+procedure TUpdateDlg.BtnDownloadClick(Sender: TObject);
 var
-  ZipDownloader: THttpDownloader;
-  F: TextFile;
+  HttpCli: TFPHTTPClient;
+  data: TFileStream;
 begin
-  tmpzip:= tmpdir+ProgName+'.zip';
   try
-    ZipDownloader:= THttpDownloader.Create;
-    if ZipDownloader.download(ZipInstall, ProgName, self{mainwindow}) then
+    data:= TFileStream.Create(tmpzip, fmCreate);
+    HttpCli:= TFPHTTPClient.Create(nil);
+    HttpCli.AddHeader('User-Agent','Mozilla 5.0 (bb84000 '+ProgName+')');
+    HttpCli.AllowRedirect:= True;
+    HttpCli.OnDataReceived:= @DataReceived;
+    HttpCli.Get (UrlInstall, data);
+    if  data.size = 0 then
     begin
-      AssignFile(F, tmpzip);
-      try
-        ReWrite(F);
-        Write(F, ZipDownloader.data);
-      finally
-        CloseFile(F);
-      end;
+      SUpdate.Caption:= DlError;
+      BtnUpdate.Enabled:= False;
     end;
   except
-    Edit1.Text:= 'Erreur de téléchargement';
+    SUpdate.Caption:= DlError;
     BtnUpdate.Enabled:= False;
   end;
-  if FileExists(tmpzip) then BtnUpdate.Enabled:= true;
+  if assigned(data) then data.free;
+  if assigned(HttpCli) then HttpCli.free;
+  if FileExists(tmpzip) then
+  begin
+    SUpdate.Caption:= sUpdtInstall;
+    BtnUpdate.Enabled:= true;
+    BtnDownload.Enabled:= False;
+  end;
 end;
 
-procedure TUpdateBox.BtnUpdateClick(Sender: TObject);
+procedure TUpdateDlg.BtnUpdateClick(Sender: TObject);
 var
    UZip: TUnZipper;
    sei: TShellExecuteInfoA;
-
 begin
   if not FileExists(tmpzip) then
   begin
@@ -165,7 +129,11 @@ begin
     UZip.free;
   end;
   DeleteFile(tmpzip);
-  if not FileExists(tmpdir+ExeInstall) then exit;
+  if not FileExists(tmpdir+ExeInstall) then
+  begin
+    SUpdate.Caption:= ZipError;
+    exit;
+  end;
   {$IFDEF WINDOWS}
   FillChar(sei, SizeOf(sei), 0);
   sei.cbSize := SizeOf(sei);
@@ -179,21 +147,43 @@ begin
   {$ENDIF}
 end;
 
-procedure TUpdateBox.ProgressNotification(thetext: String; MaxProgress,CurrentProgress: int64);
+procedure TUpDateDlg.DataReceived(Sender: TObject; const ContentLength,  CurrentPos: Int64);
 begin
-  if length(theText)>0 then
-  else
-    ProgressBarEx1.Position:= round(100*CurrentProgress/(maxprogress+1));//+1 to avoid divide by zero
-    Application.ProcessMessages;
+  if ContentLength > 0 then
+    ProgressBarEx1.Position := ProgressBarEx1.Min + CurrentPos * (ProgressBarEx1.Max - ProgressBarEx1.Min) div ContentLength;
+  ProgressBarEx1.update;
+end;
+
+
+// Self localization procedure. LangFile parameter is language related ini file
+
+procedure TUpdateDlg.Translate(LngFile: TBbInifile);
+
+begin
+  if assigned (Lngfile) then
+  with LngFile do
+  begin
+    DefaultCaption:= ReadString('Common', 'DefaultCaption', '...');
+    Caption:= Format(ReadString('UpdateDlg','Caption','Mise à jour de %s'), [DefaultCaption]);
+    BtnDownload.Caption:= ReadString('UpdateDlg', 'BtnDownload.Caption', BtnDownload.Caption);
+    BtnUpdate.Caption:= ReadString('UpdateDlg', 'BtnUpdate.Caption', BtnUpdate.Caption);
+    BtnAbort.Caption:= ReadString('UpdateDlg', 'BtnAbort.Caption', BtnAbort.Caption);
+    sUpdtAvailable:= ReadString('UpdateDlg', 'sUpdtAvailable', 'Nouvelle version %s disponible.');
+    sNoUpdtAvailable:= ReadString('UpdateDlg', 'sNoUpdtAvailable', '%s est à jour');
+    sUpdtInstall:= ReadString('UpdateDlg', 'sUpdtInstall',
+                'Cliquer sur le bouton "Mettre à jour" pour installer la mise à jour');
+    DlError:= ReadString('UpdateDlg', 'DlError', 'Erreur de téléchargement');
+    ZipError:=  ReadString('UpdateDlg', 'ZipError', 'Erreur archive');
+  end;
 end;
 
 Initialization
 
-UpdateBox:= TUpdateBox.create(nil);
+UpdateDlg:= TUpdateDlg.create(nil);
 
 finalization
 
-if Assigned(UpdateBox) then UpdateBox.Destroy;
+if Assigned(UpdateDlg) then UpdateDlg.Destroy;
 
 
 end.
